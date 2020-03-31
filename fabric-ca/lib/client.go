@@ -13,6 +13,7 @@ package lib
 import (
 	"bytes"
 	"encoding/json"
+	"fabric-sdk/bccsp"
 	"fmt"
 	"io/ioutil"
 	"net"
@@ -24,7 +25,7 @@ import (
 	"strconv"
 	"strings"
 
-	"fabric-sdk/core"
+	// "fabric-sdk/core"
 
 	"fabric-sdk/fabric-ca/api"
 
@@ -196,7 +197,7 @@ func (c *Client) GetCAInfo(req *api.GetCAInfoRequest) (*GetCAInfoResponse, error
 }
 
 // GenCSR generates a CSR (Certificate Signing Request)
-func (c *Client) GenCSR(req *api.CSRInfo, id string) ([]byte, core.Key, error) {
+func (c *Client) GenCSR(req *api.CSRInfo, id string) ([]byte, bccsp.Key, error) {
 	log.Debugf("GenCSR %+v", req)
 
 	err := c.Init()
@@ -323,7 +324,7 @@ func (c *Client) handleIdemixEnroll(req *api.EnrollmentRequest) (*EnrollmentResp
 // @param result The result from server
 // @param id Name of identity being enrolled or reenrolled
 // @param key The private key which was used to sign the request
-func (c *Client) newEnrollmentResponse(result *common.EnrollmentResponseNet, id string, key core.Key) (*EnrollmentResponse, error) {
+func (c *Client) newEnrollmentResponse(result *common.EnrollmentResponseNet, id string, key bccsp.Key) (*EnrollmentResponse, error) {
 	log.Debugf("newEnrollmentResponse %s", id)
 	certByte, err := util.B64Decode(result.Cert)
 	if err != nil {
@@ -407,7 +408,7 @@ func (c *Client) NewX509Identity(name string, creds []credential.Credential) x50
 }
 
 // GetCSP returns BCCSP instance associated with this client
-func (c *Client) GetCSP() core.CryptoSuite {
+func (c *Client) GetCSP() bccsp.BCCSP {
 	return c.csp
 }
 

@@ -25,7 +25,8 @@ import (
 	"crypto/x509"
 	"time"
 
-	"fabric-sdk/core"
+	// "fabric-sdk/core"
+	"fabric-sdk/bccsp"
 
 	factory "fabric-sdk/fabric-ca/sdkpatch/cryptosuitebridge"
 	"fabric-sdk/fabric-ca/util"
@@ -59,7 +60,7 @@ type KeyCertFiles struct {
 }
 
 // GetClientTLSConfig creates a tls.Config object from certs and roots
-func GetClientTLSConfig(cfg *ClientTLSConfig, csp core.CryptoSuite) (*tls.Config, error) {
+func GetClientTLSConfig(cfg *ClientTLSConfig, csp bccsp.BCCSP) (*tls.Config, error) {
 	var certs []tls.Certificate
 
 	if csp == nil {

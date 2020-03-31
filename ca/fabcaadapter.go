@@ -11,13 +11,12 @@ import (
 
 	"fabric-sdk/fabric-ca/lib/client/credential"
 
-	"fabric-sdk/core"
-	"fabric-sdk/core/config/endpoint"
+	// "fabric-sdk/bccsp"
+	// "fabric-sdk/bccsp/config/endpoint"
 	"fabric-sdk/fabric-ca/lib/client/credential/x509"
 
 	// "fabric-sdk/fabric-sdk-go/pkg/msp"
 	// "fabric-sdk/fabric-sdk-go/pkg/msp/api"
-
 	// "github.com/hyperledger/fabric-sdk-go/pkg/msp"
 
 	"github.com/pkg/errors"
@@ -28,9 +27,9 @@ import (
 	calib "fabric-sdk/fabric-ca/lib"
 	// fabric-sdk/fabric-sdk-go/internal/github.com/hyperledger/fabric-ca/lib/client/credential"
 	// fabric-sdk/fabric-sdk-go/internal/github.com/hyperledger/fabric-ca/lib/client/credential/x509"
-	// fabric-sdk/fabric-sdk-go/pkg/common/providers/core"
+	// fabric-sdk/fabric-sdk-go/pkg/common/providers/bccsp"
 	// fabric-sdk/fabric-sdk-go/pkg/common/providers/msp"
-	// fabric-sdk/fabric-sdk-go/pkg/core/config/endpoint"
+	// fabric-sdk/fabric-sdk-go/pkg/bccsp/config/endpoint"
 	// fabric-sdk/fabric-sdk-go/pkg/msp/api"
 )
 
@@ -41,8 +40,7 @@ type fabricCAAdapter struct {
 	caClient    *calib.Client
 }
 
-func newFabricCAAdapter(caID string, cryptoSuite core.CryptoSuite, config *CAConfig) (*fabricCAAdapter, error) {
-
+func newFabricCAAdapter(caID string, cryptoSuite bccsp.BCCSP, config *CAConfig) (*fabricCAAdapter, error) {
 	caClient, err := createFabricCAClient(caID, cryptoSuite, config)
 	if err != nil {
 		return nil, err
@@ -87,7 +85,7 @@ func (c *fabricCAAdapter) Enroll(request *EnrollmentRequest) ([]byte, error) {
 }
 
 // Reenroll handles re-enrollment
-func (c *fabricCAAdapter) Reenroll(key core.Key, cert []byte, request *ReenrollmentRequest) ([]byte, error) {
+func (c *fabricCAAdapter) Reenroll(key bccsp.Key, cert []byte, request *ReenrollmentRequest) ([]byte, error) {
 
 	logger.Debugf("Re Enrolling user with provided key/cert pair for CA [%s]", c.caClient.Config.CAName)
 
@@ -122,7 +120,7 @@ func (c *fabricCAAdapter) Reenroll(key core.Key, cert []byte, request *Reenrollm
 // cert: registrar enrollment certificate
 // request: Registration Request
 // Returns Enrolment Secret
-func (c *fabricCAAdapter) Register(key core.Key, cert []byte, request *RegistrationRequest) (string, error) {
+func (c *fabricCAAdapter) Register(key bccsp.Key, cert []byte, request *RegistrationRequest) (string, error) {
 	// Construct request for Fabric CA client
 	var attributes []caapi.Attribute
 	for i := range request.Attributes {
@@ -154,7 +152,7 @@ func (c *fabricCAAdapter) Register(key core.Key, cert []byte, request *Registrat
 // key: registrar private key
 // cert: registrar enrollment certificate
 // request: Revocation Request
-func (c *fabricCAAdapter) Revoke(key core.Key, cert []byte, request *RevocationRequest) (*RevocationResponse, error) {
+func (c *fabricCAAdapter) Revoke(key bccsp.Key, cert []byte, request *RevocationRequest) (*RevocationResponse, error) {
 	// Create revocation request
 	var req = caapi.RevocationRequest{
 		CAName: request.CAName,
@@ -215,7 +213,7 @@ func getCAInfoResponse(response *calib.GetCAInfoResponse) *GetCAInfoResponse {
 // CreateIdentity creates new identity
 // key: registrar private key
 // cert: registrar enrollment certificate
-func (c *fabricCAAdapter) CreateIdentity(key core.Key, cert []byte, request *IdentityRequest) (*IdentityResponse, error) {
+func (c *fabricCAAdapter) CreateIdentity(key bccsp.Key, cert []byte, request *IdentityRequest) (*IdentityResponse, error) {
 
 	logger.Debugf("Creating identity [%s:%s]", request.ID, request.Affiliation)
 
@@ -251,7 +249,7 @@ func (c *fabricCAAdapter) CreateIdentity(key core.Key, cert []byte, request *Ide
 // ModifyIdentity  modifies identity
 // key: registrar private key
 // cert: registrar enrollment certificate
-func (c *fabricCAAdapter) ModifyIdentity(key core.Key, cert []byte, request *IdentityRequest) (*IdentityResponse, error) {
+func (c *fabricCAAdapter) ModifyIdentity(key bccsp.Key, cert []byte, request *IdentityRequest) (*IdentityResponse, error) {
 
 	logger.Debugf("Updating identity [%s:%s]", request.ID, request.Affiliation)
 
@@ -287,7 +285,7 @@ func (c *fabricCAAdapter) ModifyIdentity(key core.Key, cert []byte, request *Ide
 // RemoveIdentity  removes identity
 // key: registrar private key
 // cert: registrar enrollment certificate
-func (c *fabricCAAdapter) RemoveIdentity(key core.Key, cert []byte, request *RemoveIdentityRequest) (*IdentityResponse, error) {
+func (c *fabricCAAdapter) RemoveIdentity(key bccsp.Key, cert []byte, request *RemoveIdentityRequest) (*IdentityResponse, error) {
 
 	logger.Debugf("Removing identity [%s]", request.ID)
 
@@ -334,7 +332,7 @@ func getIdentityResponse(response *caapi.IdentityResponse) *IdentityResponse {
 // key: registrar private key
 // cert: registrar enrollment certificate
 // id: identity id
-func (c *fabricCAAdapter) GetIdentity(key core.Key, cert []byte, id, caname string) (*IdentityResponse, error) {
+func (c *fabricCAAdapter) GetIdentity(key bccsp.Key, cert []byte, id, caname string) (*IdentityResponse, error) {
 
 	logger.Debugf("Retrieving identity [%s]", id)
 
@@ -367,7 +365,7 @@ func (c *fabricCAAdapter) GetIdentity(key core.Key, cert []byte, id, caname stri
 // GetAllIdentities returns all identities that the caller is authorized to see
 // key: registrar private key
 // cert: registrar enrollment certificate
-func (c *fabricCAAdapter) GetAllIdentities(key core.Key, cert []byte, caname string) ([]*IdentityResponse, error) {
+func (c *fabricCAAdapter) GetAllIdentities(key bccsp.Key, cert []byte, caname string) ([]*IdentityResponse, error) {
 
 	logger.Debug("Retrieving all identities")
 
@@ -397,7 +395,7 @@ func (c *fabricCAAdapter) GetAllIdentities(key core.Key, cert []byte, caname str
 }
 
 // GetAffiliation returns information about the requested affiliation
-func (c *fabricCAAdapter) GetAffiliation(key core.Key, cert []byte, affiliation, caname string) (*AffiliationResponse, error) {
+func (c *fabricCAAdapter) GetAffiliation(key bccsp.Key, cert []byte, affiliation, caname string) (*AffiliationResponse, error) {
 	logger.Debugf("Retrieving affiliation [%s]", affiliation)
 
 	registrar, err := c.newIdentity(key, cert)
@@ -437,7 +435,7 @@ func (c *fabricCAAdapter) GetAllAffiliations(key bccsp.Key, cert []byte, caname 
 }
 
 // AddAffiliation add new affiliation
-func (c *fabricCAAdapter) AddAffiliation(key core.Key, cert []byte, request *AffiliationRequest) (*AffiliationResponse, error) {
+func (c *fabricCAAdapter) AddAffiliation(key bccsp.Key, cert []byte, request *AffiliationRequest) (*AffiliationResponse, error) {
 	logger.Debugf("Add affiliation [%s]", request.Name)
 
 	req := caapi.AddAffiliationRequest{
@@ -463,7 +461,7 @@ func (c *fabricCAAdapter) AddAffiliation(key core.Key, cert []byte, request *Aff
 }
 
 // ModifyAffiliation renames an existing affiliation on the server
-func (c *fabricCAAdapter) ModifyAffiliation(key core.Key, cert []byte, request *ModifyAffiliationRequest) (*AffiliationResponse, error) {
+func (c *fabricCAAdapter) ModifyAffiliation(key bccsp.Key, cert []byte, request *ModifyAffiliationRequest) (*AffiliationResponse, error) {
 	logger.Debugf("Updating affiliation [%s => %s]", request.Name, request.NewName)
 
 	req := caapi.ModifyAffiliationRequest{
@@ -590,7 +588,7 @@ func getIdentityResponses(ca string, responses []caapi.IdentityInfo) []*Identity
 	return ret
 }
 
-func createFabricCAClient(caID string, cryptoSuite core.CryptoSuite, config *CAConfig) (*calib.Client, error) {
+func createFabricCAClient(caID string, cryptoSuite bccsp.CryptoSuite, config *CAConfig) (*calib.Client, error) {
 
 	// Create new Fabric-ca client without configs
 	c := &calib.Client{
@@ -605,7 +603,7 @@ func createFabricCAClient(caID string, cryptoSuite core.CryptoSuite, config *CAC
 	//set server CAName
 	c.Config.CAName = conf.CAName
 	//set server URL
-	c.Config.URL = endpoint.ToAddress(conf.URL)
+	c.Config.URL = ToAddress(conf.URL)
 	//set server name
 	c.Config.ServerName, _ = conf.GRPCOptions["ssl-target-name-override"].(string)
 	//certs file list
@@ -626,7 +624,7 @@ func createFabricCAClient(caID string, cryptoSuite core.CryptoSuite, config *CAC
 	}
 
 	//TLS flag enabled/disabled
-	c.Config.TLS.Enabled = endpoint.IsTLSEnabled(conf.URL)
+	c.Config.TLS.Enabled = IsTLSEnabled(conf.URL)
 	c.Config.MSPDir = config.CAKeyStorePath()
 
 	//Factory opts

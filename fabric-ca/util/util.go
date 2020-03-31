@@ -32,9 +32,10 @@ import (
 	"math/big"
 	mrand "math/rand"
 
+	"fabric-sdk/bccsp"
 	factory "fabric-sdk/fabric-ca/sdkpatch/cryptosuitebridge"
 
-	"fabric-sdk/core"
+	// "fabric-sdk/core"
 
 	"net/http"
 	"os"
@@ -141,7 +142,7 @@ func Marshal(from interface{}, what string) ([]byte, error) {
 // @param body The body of an HTTP request
 // @param fabCACompatibilityMode will set auth token signing for Fabric CA 1.3 (true) or Fabric 1.4+ (false)
 
-func CreateToken(csp core.CryptoSuite, cert []byte, key core.Key, method, uri string, body []byte, fabCACompatibilityMode bool) (string, error) {
+func CreateToken(csp bccsp.BCCSP, cert []byte, key bccsp.Key, method, uri string, body []byte, fabCACompatibilityMode bool) (string, error) {
 	x509Cert, err := GetX509CertificateFromPEM(cert)
 	if err != nil {
 		return "", err
@@ -194,7 +195,7 @@ func GenRSAToken(csp core.CryptoSuite, cert []byte, key []byte, body []byte) (st
 */
 
 //GenECDSAToken signs the http body and cert with ECDSA using EC private key
-func GenECDSAToken(csp core.CryptoSuite, cert []byte, key core.Key, method, uri string, body []byte, fabCACompatibilityMode bool) (string, error) {
+func GenECDSAToken(csp bccsp.BCCSP, cert []byte, key bccsp.Key, method, uri string, body []byte, fabCACompatibilityMode bool) (string, error) {
 	b64body := B64Encode(body)
 	b64cert := B64Encode(cert)
 	b64uri := B64Encode([]byte(uri))
@@ -208,7 +209,7 @@ func GenECDSAToken(csp core.CryptoSuite, cert []byte, key core.Key, method, uri 
 	return genECDSAToken(csp, key, b64cert, payload)
 }
 
-func genECDSAToken(csp core.CryptoSuite, key core.Key, b64cert, payload string) (string, error) {
+func genECDSAToken(csp bccsp.BCCSP, key bccsp.Key, b64cert, payload string) (string, error) {
 	digest, digestError := csp.Hash([]byte(payload), factory.GetSHAOpts())
 	if digestError != nil {
 		return "", errors.WithMessage(digestError, fmt.Sprintf("Hash failed on '%s'", payload))

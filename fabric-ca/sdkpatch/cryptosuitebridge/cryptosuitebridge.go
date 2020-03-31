@@ -15,11 +15,11 @@ import (
 	"crypto/ecdsa"
 
 	"fabric-sdk/bccsp"
+	factory "fabric-sdk/bccsp/factory"
 	cspsigner "fabric-sdk/bccsp/signer"
 
 	"fabric-sdk/bccsp/utils"
-
-	"fabric-sdk/core"
+	// "fabric-sdk/core"
 	// "fabric-sdk/core"
 )
 
@@ -50,7 +50,7 @@ const (
 )
 
 // NewCspSigner is a bridge for bccsp signer.New call
-func NewCspSigner(csp core.CryptoSuite, key core.Key) (crypto.Signer, error) {
+func NewCspSigner(csp bccsp.BCCSP, key bccsp.Key) (crypto.Signer, error) {
 	return cspsigner.New(csp, key)
 }
 
@@ -65,57 +65,57 @@ func PrivateKeyToDER(privateKey *ecdsa.PrivateKey) ([]byte, error) {
 }
 
 //GetDefault returns default cryptosuite from bccsp factory default
-func GetDefault() core.CryptoSuite {
-	return cryptosuite.GetDefault()
+func GetDefault() bccsp.BCCSP {
+	return factory.GetDefault()
 }
 
 //GetSHAOpts returns options for computing SHA.
-func GetSHAOpts() core.HashOpts {
+func GetSHAOpts() bccsp.HashOpts {
 	return &bccsp.SHAOpts{}
 }
 
 //GetSHA256Opts returns options relating to SHA-256.
-func GetSHA256Opts() core.HashOpts {
+func GetSHA256Opts() bccsp.HashOpts {
 	return &bccsp.SHA256Opts{}
 }
 
 //GetRSA2048KeyGenOpts returns options for RSA key generation at 2048 security.
-func GetRSA2048KeyGenOpts(ephemeral bool) core.KeyGenOpts {
+func GetRSA2048KeyGenOpts(ephemeral bool) bccsp.KeyGenOpts {
 	return &bccsp.RSA2048KeyGenOpts{Temporary: ephemeral}
 }
 
 //GetRSA3072KeyGenOpts returns options for RSA key generation at 3072 security.
-func GetRSA3072KeyGenOpts(ephemeral bool) core.KeyGenOpts {
+func GetRSA3072KeyGenOpts(ephemeral bool) bccsp.KeyGenOpts {
 	return &bccsp.RSA3072KeyGenOpts{Temporary: ephemeral}
 }
 
 //GetRSA4096KeyGenOpts returns options for RSA key generation at 4096 security.
-func GetRSA4096KeyGenOpts(ephemeral bool) core.KeyGenOpts {
+func GetRSA4096KeyGenOpts(ephemeral bool) bccsp.KeyGenOpts {
 	return &bccsp.RSA4096KeyGenOpts{Temporary: ephemeral}
 }
 
 // GetECDSAKeyGenOpts returns options for ECDSA key generation.
-func GetECDSAKeyGenOpts(ephemeral bool) core.KeyGenOpts {
+func GetECDSAKeyGenOpts(ephemeral bool) bccsp.KeyGenOpts {
 	return &bccsp.ECDSAKeyGenOpts{Temporary: ephemeral}
 }
 
 //GetECDSAP256KeyGenOpts returns options for ECDSA key generation with curve P-256.
-func GetECDSAP256KeyGenOpts(ephemeral bool) core.KeyGenOpts {
+func GetECDSAP256KeyGenOpts(ephemeral bool) bccsp.KeyGenOpts {
 	return &bccsp.ECDSAP256KeyGenOpts{Temporary: ephemeral}
 }
 
 //GetECDSAP384KeyGenOpts options for ECDSA key generation with curve P-384.
-func GetECDSAP384KeyGenOpts(ephemeral bool) core.KeyGenOpts {
+func GetECDSAP384KeyGenOpts(ephemeral bool) bccsp.KeyGenOpts {
 	return &bccsp.ECDSAP384KeyGenOpts{Temporary: ephemeral}
 }
 
 //GetX509PublicKeyImportOpts options for importing public keys from an x509 certificate
-func GetX509PublicKeyImportOpts(ephemeral bool) core.KeyImportOpts {
+func GetX509PublicKeyImportOpts(ephemeral bool) bccsp.KeyImportOpts {
 	return &bccsp.X509PublicKeyImportOpts{Temporary: ephemeral}
 }
 
 //GetECDSAPrivateKeyImportOpts options for ECDSA secret key importation in DER format
 // or PKCS#8 format.
-func GetECDSAPrivateKeyImportOpts(ephemeral bool) core.KeyImportOpts {
+func GetECDSAPrivateKeyImportOpts(ephemeral bool) bccsp.KeyImportOpts {
 	return &bccsp.ECDSAPrivateKeyImportOpts{Temporary: ephemeral}
 }
