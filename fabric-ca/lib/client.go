@@ -13,7 +13,8 @@ package lib
 import (
 	"bytes"
 	"encoding/json"
-	"fabric-sdk/bccsp"
+
+	// "fabric-sdk/bccsp"
 	"fmt"
 	"io/ioutil"
 	"net"

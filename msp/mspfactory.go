@@ -24,8 +24,12 @@ func NewProviderFactory() *ProviderFactory {
 }
 
 // CreateUserStore creates a UserStore using the SDK's default implementation
-func (f *ProviderFactory) CreateUserStore(stateStorePath string) (*kv.UserStore, error) {
-	var userStore *kv.UserStore
+func (f *ProviderFactory) CreateUserStore(stateStorePath string) (kv.UserStore, error) {
+	var (
+		// userStore *CertFileUserStore
+		userStore kv.UserStore
+		// err       error
+	)
 
 	if stateStorePath == "" {
 		return nil, fmt.Errorf("%s", "stateStorePath not exist")

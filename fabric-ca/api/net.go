@@ -21,6 +21,8 @@ Please review third_party pinning scripts and patches for more details.
 package api
 
 import (
+	"errors"
+
 	"github.com/cloudflare/cfssl/signer"
 )
 
@@ -29,6 +31,10 @@ import (
  * and responses which flow over the network between a fabric-ca client
  * and the fabric-ca server.
  */
+var (
+	// ErrCARegistrarNotFound indicates the CA registrar was not found
+	ErrCARegistrarNotFound = errors.New("CA registrar not found")
+)
 
 // RegistrationRequestNet is the registration request for a new identity
 type RegistrationRequestNet struct {

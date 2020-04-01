@@ -2,8 +2,12 @@ package ca
 
 import (
 	"fabric-sdk/bccsp"
-	"fabric-sdk/msp"
+	"fabric-sdk/fabric-ca/api"
 	"fabric-sdk/kv"
+	"fabric-sdk/msp"
+	"fmt"
+
+	"github.com/pkg/errors"
 )
 
 type CAClientImpl struct {
@@ -11,15 +15,15 @@ type CAClientImpl struct {
 	caName          string
 	orgMSPID        string
 	cryptoSuite     bccsp.BCCSP
-	identityManager msp.IdentityManager
+	identityManager *msp.IdentityManager
 	userStore       kv.UserStore
 	adapter         *fabricCAAdapter
 	registrar       EnrollCredentials
-	provider        msp.ProviderFactory
+	provider        *msp.ProviderFactory
 }
 
 // NewCAClient creates a new CA CAClient instance
-func NewCAClient(orgName string,mspID string, caName string,stateStorePath string, Registrar *EnrollCredentials) (*CAClientImpl, error) {
+func NewCAClient(orgName string, mspID string, caName string, stateStorePath string, Registrar *EnrollCredentials) (*CAClientImpl, error) {
 	if orgName == "" {
 		return nil, errors.New("organization is missing")
 	}
@@ -47,22 +51,30 @@ func NewCAClient(orgName string,mspID string, caName string,stateStorePath strin
 	// if !ok {
 	// 	return nil, errors.Errorf("error initializing CA [%s]", caID)
 	// }
-	cryptoSuite := GetSuiteByConfig()
-	config := GetCAConfig()
-	adapter, err := newFabricCAAdapter(caID, cryptoSuite,config)
-	if err != nil {
-		return nil, errors.Wrapf(err, "error initializing CA [%s]", caID)
-	}
-
-	identityManager, ok := ctx.IdentityManager(orgName)
-	if !ok {
-		return nil, fmt.Errorf("identity manager not found for organization '%s", orgName)
-	}
-
-	provider:= msp.NewProviderFactory()
-	userStore ,err := provider.CreateUserStore(stateStorePath)
+	cryptoSuite, err := GetSuiteByConfig()
 	if err != nil {
 		return nil, err
+	}
+
+	config, err := GetCAConfig()
+	if err != nil {
+		return nil, err
+	}
+
+	adapter, err := newFabricCAAdapter(caName, cryptoSuite, config)
+	if err != nil {
+		return nil, errors.Wrapf(err, "error initializing CA [%s]", caName)
+	}
+
+	provider := msp.NewProviderFactory()
+	userStore, err := provider.CreateUserStore(stateStorePath)
+	if err != nil {
+		return nil, err
+	}
+
+	identityManager, err := msp.NewIdentityManager(orgName, mspID, nil, "./keys", userStore, cryptoSuite, "./msp")
+	if err != nil {
+		return nil, fmt.Errorf("identity manager not found for organization '%s", orgName)
 	}
 
 	mgr := &CAClientImpl{
@@ -74,7 +86,7 @@ func NewCAClient(orgName string,mspID string, caName string,stateStorePath strin
 		userStore:       userStore,
 		adapter:         adapter,
 		registrar:       *Registrar,
-		provider:		 provider,
+		provider:        provider,
 	}
 	return mgr, nil
 }
@@ -95,7 +107,7 @@ func (c *CAClientImpl) Enroll(request *api.EnrollmentRequest) error {
 	if err != nil {
 		return errors.Wrap(err, "enroll failed")
 	}
-	userData := &msp.UserData{
+	userData := &kv.UserData{
 		MSPID:                 c.orgMSPID,
 		ID:                    request.Name,
 		EnrollmentCertificate: cert,
@@ -106,7 +118,6 @@ func (c *CAClientImpl) Enroll(request *api.EnrollmentRequest) error {
 	}
 	return nil
 }
-
 
 func (c *CAClientImpl) CreateIdentity(request *api.IdentityRequest) (*api.IdentityResponse, error) {
 
@@ -215,7 +226,6 @@ func (c *CAClientImpl) Reenroll(request *api.ReenrollmentRequest) error {
 		return fmt.Errorf("no CAs configured for organization: %s", c.orgName)
 	}
 	if request.Name == "" {
-		logger.Info("invalid re-enroll request, missing enrollmentID")
 		return errors.New("user name missing")
 	}
 
@@ -228,7 +238,7 @@ func (c *CAClientImpl) Reenroll(request *api.ReenrollmentRequest) error {
 	if err != nil {
 		return errors.Wrap(err, "reenroll failed")
 	}
-	userData := &msp.UserData{
+	userData := &kv.UserData{
 		MSPID:                 c.orgMSPID,
 		ID:                    user.Identifier().ID,
 		EnrollmentCertificate: cert,
@@ -240,7 +250,6 @@ func (c *CAClientImpl) Reenroll(request *api.ReenrollmentRequest) error {
 
 	return nil
 }
-
 
 func (c *CAClientImpl) Register(request *api.RegistrationRequest) (string, error) {
 	if c.adapter == nil {
@@ -270,8 +279,7 @@ func (c *CAClientImpl) Register(request *api.RegistrationRequest) (string, error
 	return secret, nil
 }
 
-
-func (c *CAClientImpl) Revoke(request *api.RevocationRequest) (*api.RevocationResponse, error) {
+func (c *CAClientImpl) Revoke(request *RevocationRequest) (*api.RevocationResponse, error) {
 	if c.adapter == nil {
 		return nil, fmt.Errorf("no CAs configured for organization: %s", c.orgName)
 	}
@@ -302,7 +310,6 @@ func (c *CAClientImpl) GetCAInfo() (*api.GetCAInfoResponse, error) {
 
 	return c.adapter.GetCAInfo(c.caName)
 }
-
 
 func (c *CAClientImpl) GetAffiliation(affiliation, caname string) (*api.AffiliationResponse, error) {
 	if c.adapter == nil {
@@ -335,7 +342,6 @@ func (c *CAClientImpl) GetAllAffiliations(caname string) (*api.AffiliationRespon
 
 	return c.adapter.GetAllAffiliations(registrar.PrivateKey(), registrar.EnrollmentCertificate(), caname)
 }
-
 
 func (c *CAClientImpl) AddAffiliation(request *api.AffiliationRequest) (*api.AffiliationResponse, error) {
 	if c.adapter == nil {
@@ -381,7 +387,6 @@ func (c *CAClientImpl) ModifyAffiliation(request *api.ModifyAffiliationRequest) 
 	return c.adapter.ModifyAffiliation(registrar.PrivateKey(), registrar.EnrollmentCertificate(), request)
 }
 
-
 func (c *CAClientImpl) RemoveAffiliation(request *api.AffiliationRequest) (*api.AffiliationResponse, error) {
 	if c.adapter == nil {
 		return nil, fmt.Errorf("no CAs configured for organization: %s", c.orgName)
@@ -404,9 +409,7 @@ func (c *CAClientImpl) RemoveAffiliation(request *api.AffiliationRequest) (*api.
 	return c.adapter.RemoveAffiliation(registrar.PrivateKey(), registrar.EnrollmentCertificate(), request)
 }
 
-
-
-func (c *CAClientImpl) getRegistrar(enrollID string, enrollSecret string) (msp.SigningIdentity, error) {
+func (c *CAClientImpl) getRegistrar(enrollID string, enrollSecret string) (*msp.User, error) {
 
 	if enrollID == "" {
 		return nil, api.ErrCARegistrarNotFound
@@ -433,4 +436,3 @@ func (c *CAClientImpl) getRegistrar(enrollID string, enrollSecret string) (msp.S
 	}
 	return registrar, nil
 }
-

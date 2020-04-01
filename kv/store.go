@@ -35,3 +35,4 @@ type IdentityIdentifier struct {
 	// The identifier for an identity within a provider
 	ID string
 }
+

@@ -14,9 +14,9 @@ import (
 	"github.com/pkg/errors"
 )
 
-var (
-	ErrKeyValueNotFound = errors.New("value for key not found")
-)
+// var (
+// 	ErrKeyValueNotFound = errors.New("value for key not found")
+// )
 
 const (
 	newDirMode  = 0700

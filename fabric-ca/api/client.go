@@ -81,6 +81,7 @@ func (er EnrollmentRequest) String() string {
 // ReenrollmentRequest is a request to reenroll an identity.
 // This is useful to renew a certificate before it has expired.
 type ReenrollmentRequest struct {
+	Name string `json:"name,omitempty"`
 	// Profile is the name of the signing profile to use in issuing the certificate
 	Profile string `json:"profile,omitempty"`
 	// Label is the label to use in HSM operations
@@ -394,4 +395,54 @@ func (ar *AttributeRequest) IsRequired() bool {
 func NewBasicKeyRequest() *BasicKeyRequest {
 	bkr := csr.NewBasicKeyRequest()
 	return &BasicKeyRequest{Algo: bkr.A, Size: bkr.S}
+}
+
+type IdentityRequest struct {
+
+	// The enrollment ID which uniquely identifies an identity (required)
+	ID string
+
+	// The identity's affiliation (required)
+	Affiliation string
+
+	// Array of attributes to assign to the user
+	Attributes []Attribute
+
+	// Type of identity being registered (e.g. 'peer, app, user'). Default is 'user'.
+	Type string
+
+	// The maximum number of times the secret can be reused to enroll (default CA's Max Enrollment)
+	MaxEnrollments int
+
+	// The enrollment secret. If not provided, a random secret is generated.
+	Secret string
+
+	// Name of the CA to send the request to within the Fabric CA server (optional)
+	CAName string
+}
+
+type GetCAInfoResponse struct {
+	// CAName is the name of the CA
+	CAName string
+	// CAChain is the PEM-encoded bytes of the fabric-ca-server's CA chain.
+	// The 1st element of the chain is the root CA cert
+	CAChain []byte
+	// Idemix issuer public key of the CA
+	IssuerPublicKey []byte
+	// Idemix issuer revocation public key of the CA
+	IssuerRevocationPublicKey []byte
+	// Version of the server
+	Version string
+}
+
+// AffiliationRequest represents the request to add/remove affiliation to the fabric-ca-server
+type AffiliationRequest struct {
+	// Name of the affiliation
+	Name string
+
+	// Creates parent affiliations if they do not exist
+	Force bool
+
+	// Name of the CA
+	CAName string
 }

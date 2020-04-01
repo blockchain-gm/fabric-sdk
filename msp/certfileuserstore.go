@@ -26,8 +26,8 @@ func storeKeyFromUserIdentifier(key kv.IdentityIdentifier) string {
 }
 
 // NewCertFileUserStore1 creates a new instance of CertFileUserStore
-func NewCertFileUserStore1(store FileKeyValueStore) (*CertFileUserStore, error) {
-	return &FileKeyValueStore{
+func NewCertFileUserStore1(store *kv.FileKeyValueStore) (*CertFileUserStore, error) {
+	return &CertFileUserStore{
 		store: store,
 	}, nil
 }
@@ -37,7 +37,7 @@ func NewCertFileUserStore(path string) (*CertFileUserStore, error) {
 	if path == "" {
 		return nil, errors.New("path is empty")
 	}
-	store, err := kv.New(&FileKeyValueStoreOptions{
+	store, err := kv.New(&kv.FileKeyValueStoreOptions{
 		Path: path,
 	})
 	if err != nil {
@@ -47,10 +47,10 @@ func NewCertFileUserStore(path string) (*CertFileUserStore, error) {
 }
 
 // Load returns the User stored in the store for a key.
-func (s *CertFileUserStore) Load(key IdentityIdentifier) (*kv.UserData, error) {
+func (s *CertFileUserStore) Load(key kv.IdentityIdentifier) (*kv.UserData, error) {
 	cert, err := s.store.Load(storeKeyFromUserIdentifier(key))
 	if err != nil {
-		if err == ErrKeyValueNotFound {
+		if err == kv.ErrKeyValueNotFound {
 			return nil, ErrUserNotFound
 		}
 		return nil, err
@@ -59,7 +59,7 @@ func (s *CertFileUserStore) Load(key IdentityIdentifier) (*kv.UserData, error) {
 	if !ok {
 		return nil, errors.New("user is not of proper type")
 	}
-	userData := &UserData{
+	userData := &kv.UserData{
 		MSPID:                 key.MSPID,
 		ID:                    key.ID,
 		EnrollmentCertificate: certBytes,
@@ -74,6 +74,6 @@ func (s *CertFileUserStore) Store(user *kv.UserData) error {
 }
 
 // Delete deletes a User from store
-func (s *CertFileUserStore) Delete(key IdentityIdentifier) error {
+func (s *CertFileUserStore) Delete(key kv.IdentityIdentifier) error {
 	return s.store.Delete(storeKeyFromUserIdentifier(key))
 }

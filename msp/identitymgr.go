@@ -8,11 +8,12 @@ package msp
 
 import (
 	"path/filepath"
-	"strings"
+	// "strings"
 
-	"github.com/pkg/errors"
 	"fabric-sdk/bccsp"
 	"fabric-sdk/kv"
+
+	"github.com/pkg/errors"
 	// "github.com/hyperledger/fabric-sdk-go/pkg/common/providers/core"
 	// "github.com/hyperledger/fabric-sdk-go/pkg/common/providers/fab"
 	// "github.com/hyperledger/fabric-sdk-go/pkg/common/providers/msp"
@@ -23,11 +24,10 @@ type CertKeyPair struct {
 	Key  []byte
 }
 
-
 // IdentityManager implements fab/IdentityManager
 type IdentityManager struct {
-	orgName         string
-	orgMSPID        string
+	orgName  string
+	orgMSPID string
 	// config          fab.EndpointConfig
 	cryptoSuite     bccsp.BCCSP
 	embeddedUsers   map[string]CertKeyPair
@@ -37,7 +37,7 @@ type IdentityManager struct {
 }
 
 // NewIdentityManager creates a new instance of IdentityManager
-func NewIdentityManager(orgName, mspID string,users map[string]fab.CertKeyPair, cryptoPath string, userStore kv.UserStore, cryptoSuite bccsp.BCCSP, cryptoConfigPath string) (*IdentityManager, error) {
+func NewIdentityManager(orgName, mspID string, users map[string]CertKeyPair, cryptoPath string, userStore kv.UserStore, cryptoSuite bccsp.BCCSP, cryptoConfigPath string) (*IdentityManager, error) {
 
 	// netConfig := endpointConfig.NetworkConfig()
 	// // viper keys are case insensitive
@@ -50,10 +50,10 @@ func NewIdentityManager(orgName, mspID string,users map[string]fab.CertKeyPair, 
 	// 	return nil, errors.New("Either a cryptopath or an embedded list of users is required")
 	// }
 
-	var mspPrivKeyStore core.KVStore
-	var mspCertStore core.KVStore
+	var mspPrivKeyStore kv.KVStore
+	var mspCertStore kv.KVStore
 
-	orgCryptoPathTemplate := CryptoPath
+	orgCryptoPathTemplate := cryptoPath
 	if orgCryptoPathTemplate != "" {
 		var err error
 		if !filepath.IsAbs(orgCryptoPathTemplate) {
@@ -67,13 +67,14 @@ func NewIdentityManager(orgName, mspID string,users map[string]fab.CertKeyPair, 
 		if err != nil {
 			return nil, errors.Wrap(err, "creating a cert store failed")
 		}
-	} else {
-		logger.Warnf("Cryptopath not provided for organization [%s], MSP stores not created", orgName)
 	}
+	//  else {
+	// 	logger.Warnf("Cryptopath not provided for organization [%s], MSP stores not created", orgName)
+	// }
 
 	mgr := &IdentityManager{
-		orgName:         orgName,
-		orgMSPID:        mspID,
+		orgName:  orgName,
+		orgMSPID: mspID,
 		// config:          endpointConfig,
 		cryptoSuite:     cryptoSuite,
 		mspPrivKeyStore: mspPrivKeyStore,

@@ -4,9 +4,9 @@ import (
 	"fabric-sdk/bccsp"
 	bccspSw "fabric-sdk/bccsp/factory"
 	"fabric-sdk/bccsp/sw"
+
 	"github.com/pkg/errors"
 )
-
 
 func GetSuiteByConfig() (bccsp.BCCSP, error) {
 	opts := getOptsByConfig()
@@ -30,7 +30,12 @@ func GetSuiteWithDefaultEphemeral() (bccsp.BCCSP, error) {
 func getBCCSPFromOpts(config *bccspSw.SwOpts) (bccsp.BCCSP, error) {
 	f := &bccspSw.SWFactory{}
 
-	csp, err := f.Get(config)
+	conf := &bccspSw.FactoryOpts{
+		ProviderName: "SW",
+		SwOpts:       config,
+	}
+
+	csp, err := f.Get(conf)
 	if err != nil {
 		return nil, errors.Wrapf(err, "Could not initialize BCCSP %s", f.Name())
 	}
@@ -54,7 +59,7 @@ func getOptsByConfig() *bccspSw.SwOpts {
 			KeyStorePath: "./keys",
 		},
 	}
-	logger.Debug("Initialized SW cryptosuite")
+	// logger.Debug("Initialized SW cryptosuite")
 
 	return opts
 }
@@ -65,7 +70,7 @@ func getEphemeralOpts() *bccspSw.SwOpts {
 		SecLevel:   256,
 		Ephemeral:  false,
 	}
-	logger.Debug("Initialized ephemeral SW cryptosuite with default opts")
+	// logger.Debug("Initialized ephemeral SW cryptosuite with default opts")
 
 	return opts
 }

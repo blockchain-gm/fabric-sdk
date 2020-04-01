@@ -15,6 +15,8 @@ import (
 )
 
 var projectPathOnce sync.Once
+var ProjectPath = ""
+var Project = "github.com/hyperledger/fabric-sdk-go"
 
 // GetProjectPath returns the path to the source of fabric-sdk-go. More specifically, this function searches for the
 // directory containing the project's go.mod file. This function must only be called from tests.

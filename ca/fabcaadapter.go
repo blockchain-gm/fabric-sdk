@@ -9,6 +9,7 @@ package ca
 import (
 	"fabric-sdk/bccsp"
 
+	"fabric-sdk/fabric-ca/api"
 	"fabric-sdk/fabric-ca/lib/client/credential"
 
 	// "fabric-sdk/bccsp"
@@ -55,9 +56,9 @@ func newFabricCAAdapter(caID string, cryptoSuite bccsp.BCCSP, config *CAConfig) 
 }
 
 // Enroll handles enrollment.
-func (c *fabricCAAdapter) Enroll(request *EnrollmentRequest) ([]byte, error) {
+func (c *fabricCAAdapter) Enroll(request *api.EnrollmentRequest) ([]byte, error) {
 
-	logger.Debugf("Enrolling user [%s]", request.Name)
+	// logger.Debugf("Enrolling user [%s]", request.Name)
 
 	// TODO add attributes
 	careq := &caapi.EnrollmentRequest{
@@ -85,9 +86,9 @@ func (c *fabricCAAdapter) Enroll(request *EnrollmentRequest) ([]byte, error) {
 }
 
 // Reenroll handles re-enrollment
-func (c *fabricCAAdapter) Reenroll(key bccsp.Key, cert []byte, request *ReenrollmentRequest) ([]byte, error) {
+func (c *fabricCAAdapter) Reenroll(key bccsp.Key, cert []byte, request *api.ReenrollmentRequest) ([]byte, error) {
 
-	logger.Debugf("Re Enrolling user with provided key/cert pair for CA [%s]", c.caClient.Config.CAName)
+	// logger.Debugf("Re Enrolling user with provided key/cert pair for CA [%s]", c.caClient.Config.CAName)
 
 	careq := &caapi.ReenrollmentRequest{
 		CAName:  c.caClient.Config.CAName,
@@ -120,7 +121,7 @@ func (c *fabricCAAdapter) Reenroll(key bccsp.Key, cert []byte, request *Reenroll
 // cert: registrar enrollment certificate
 // request: Registration Request
 // Returns Enrolment Secret
-func (c *fabricCAAdapter) Register(key bccsp.Key, cert []byte, request *RegistrationRequest) (string, error) {
+func (c *fabricCAAdapter) Register(key bccsp.Key, cert []byte, request *api.RegistrationRequest) (string, error) {
 	// Construct request for Fabric CA client
 	var attributes []caapi.Attribute
 	for i := range request.Attributes {
@@ -152,7 +153,7 @@ func (c *fabricCAAdapter) Register(key bccsp.Key, cert []byte, request *Registra
 // key: registrar private key
 // cert: registrar enrollment certificate
 // request: Revocation Request
-func (c *fabricCAAdapter) Revoke(key bccsp.Key, cert []byte, request *RevocationRequest) (*RevocationResponse, error) {
+func (c *fabricCAAdapter) Revoke(key bccsp.Key, cert []byte, request *RevocationRequest) (*api.RevocationResponse, error) {
 	// Create revocation request
 	var req = caapi.RevocationRequest{
 		CAName: request.CAName,
@@ -171,25 +172,25 @@ func (c *fabricCAAdapter) Revoke(key bccsp.Key, cert []byte, request *Revocation
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to revoke")
 	}
-	var revokedCerts []RevokedCert
+	var revokedCerts []api.RevokedCert
 	for i := range resp.RevokedCerts {
 		revokedCerts = append(
 			revokedCerts,
-			RevokedCert{
+			api.RevokedCert{
 				Serial: resp.RevokedCerts[i].Serial,
 				AKI:    resp.RevokedCerts[i].AKI,
 			})
 	}
 
-	return &RevocationResponse{
+	return &api.RevocationResponse{
 		RevokedCerts: revokedCerts,
 		CRL:          resp.CRL,
 	}, nil
 }
 
 // GetCAInfo returns generic CA information
-func (c *fabricCAAdapter) GetCAInfo(caname string) (*GetCAInfoResponse, error) {
-	logger.Debugf("Get CA info [%s]", caname)
+func (c *fabricCAAdapter) GetCAInfo(caname string) (*api.GetCAInfoResponse, error) {
+	// logger.Debugf("Get CA info [%s]", caname)
 
 	req := &caapi.GetCAInfoRequest{CAName: caname}
 	resp, err := c.caClient.GetCAInfo(req)
@@ -200,8 +201,8 @@ func (c *fabricCAAdapter) GetCAInfo(caname string) (*GetCAInfoResponse, error) {
 	return getCAInfoResponse(resp), nil
 }
 
-func getCAInfoResponse(response *calib.GetCAInfoResponse) *GetCAInfoResponse {
-	return &GetCAInfoResponse{
+func getCAInfoResponse(response *calib.GetCAInfoResponse) *api.GetCAInfoResponse {
+	return &api.GetCAInfoResponse{
 		CAName:                    response.CAName,
 		CAChain:                   response.CAChain[:],
 		IssuerPublicKey:           response.IssuerPublicKey[:],
@@ -213,9 +214,9 @@ func getCAInfoResponse(response *calib.GetCAInfoResponse) *GetCAInfoResponse {
 // CreateIdentity creates new identity
 // key: registrar private key
 // cert: registrar enrollment certificate
-func (c *fabricCAAdapter) CreateIdentity(key bccsp.Key, cert []byte, request *IdentityRequest) (*IdentityResponse, error) {
+func (c *fabricCAAdapter) CreateIdentity(key bccsp.Key, cert []byte, request *api.IdentityRequest) (*api.IdentityResponse, error) {
 
-	logger.Debugf("Creating identity [%s:%s]", request.ID, request.Affiliation)
+	// logger.Debugf("Creating identity [%s:%s]", request.ID, request.Affiliation)
 
 	var attributes []caapi.Attribute
 	for i := range request.Attributes {
@@ -249,9 +250,9 @@ func (c *fabricCAAdapter) CreateIdentity(key bccsp.Key, cert []byte, request *Id
 // ModifyIdentity  modifies identity
 // key: registrar private key
 // cert: registrar enrollment certificate
-func (c *fabricCAAdapter) ModifyIdentity(key bccsp.Key, cert []byte, request *IdentityRequest) (*IdentityResponse, error) {
+func (c *fabricCAAdapter) ModifyIdentity(key bccsp.Key, cert []byte, request *api.IdentityRequest) (*api.IdentityResponse, error) {
 
-	logger.Debugf("Updating identity [%s:%s]", request.ID, request.Affiliation)
+	// logger.Debugf("Updating identity [%s:%s]", request.ID, request.Affiliation)
 
 	var attributes []caapi.Attribute
 	for i := range request.Attributes {
@@ -285,9 +286,9 @@ func (c *fabricCAAdapter) ModifyIdentity(key bccsp.Key, cert []byte, request *Id
 // RemoveIdentity  removes identity
 // key: registrar private key
 // cert: registrar enrollment certificate
-func (c *fabricCAAdapter) RemoveIdentity(key bccsp.Key, cert []byte, request *RemoveIdentityRequest) (*IdentityResponse, error) {
+func (c *fabricCAAdapter) RemoveIdentity(key bccsp.Key, cert []byte, request *api.RemoveIdentityRequest) (*api.IdentityResponse, error) {
 
-	logger.Debugf("Removing identity [%s]", request.ID)
+	// logger.Debugf("Removing identity [%s]", request.ID)
 
 	// Create remove request
 	req := caapi.RemoveIdentityRequest{
@@ -309,14 +310,15 @@ func (c *fabricCAAdapter) RemoveIdentity(key bccsp.Key, cert []byte, request *Re
 	return getIdentityResponse(response), nil
 }
 
-func getIdentityResponse(response *caapi.IdentityResponse) *IdentityResponse {
+func getIdentityResponse(response *caapi.IdentityResponse) *api.IdentityResponse {
 
-	var attributes []Attribute
+	var attributes []api.Attribute
 	for i := range response.Attributes {
-		attributes = append(attributes, Attribute{Name: response.Attributes[i].Name, Value: response.Attributes[i].Value, ECert: response.Attributes[i].ECert})
+		attributes = append(attributes, api.Attribute{Name: response.Attributes[i].Name, Value: response.Attributes[i].Value, ECert: response.Attributes[i].ECert})
 	}
 
-	ret := &IdentityResponse{ID: response.ID,
+	ret := &api.IdentityResponse{
+		ID:             response.ID,
 		Affiliation:    response.Affiliation,
 		Type:           response.Type,
 		Attributes:     attributes,
@@ -332,9 +334,9 @@ func getIdentityResponse(response *caapi.IdentityResponse) *IdentityResponse {
 // key: registrar private key
 // cert: registrar enrollment certificate
 // id: identity id
-func (c *fabricCAAdapter) GetIdentity(key bccsp.Key, cert []byte, id, caname string) (*IdentityResponse, error) {
+func (c *fabricCAAdapter) GetIdentity(key bccsp.Key, cert []byte, id, caname string) (*api.IdentityResponse, error) {
 
-	logger.Debugf("Retrieving identity [%s]", id)
+	// logger.Debugf("Retrieving identity [%s]", id)
 
 	registrar, err := c.newIdentity(key, cert)
 	if err != nil {
@@ -346,12 +348,12 @@ func (c *fabricCAAdapter) GetIdentity(key bccsp.Key, cert []byte, id, caname str
 		return nil, errors.Wrap(err, "failed to get identity")
 	}
 
-	var attributes []Attribute
+	var attributes []api.Attribute
 	for i := range response.Attributes {
-		attributes = append(attributes, Attribute{Name: response.Attributes[i].Name, Value: response.Attributes[i].Value, ECert: response.Attributes[i].ECert})
+		attributes = append(attributes, api.Attribute{Name: response.Attributes[i].Name, Value: response.Attributes[i].Value, ECert: response.Attributes[i].ECert})
 	}
 
-	ret := &IdentityResponse{ID: response.ID,
+	ret := &api.IdentityResponse{ID: response.ID,
 		Affiliation:    response.Affiliation,
 		Type:           response.Type,
 		Attributes:     attributes,
@@ -365,9 +367,9 @@ func (c *fabricCAAdapter) GetIdentity(key bccsp.Key, cert []byte, id, caname str
 // GetAllIdentities returns all identities that the caller is authorized to see
 // key: registrar private key
 // cert: registrar enrollment certificate
-func (c *fabricCAAdapter) GetAllIdentities(key bccsp.Key, cert []byte, caname string) ([]*IdentityResponse, error) {
+func (c *fabricCAAdapter) GetAllIdentities(key bccsp.Key, cert []byte, caname string) ([]*api.IdentityResponse, error) {
 
-	logger.Debug("Retrieving all identities")
+	// logger.Debug("Retrieving all identities")
 
 	registrar, err := c.newIdentity(key, cert)
 	if err != nil {
@@ -395,8 +397,8 @@ func (c *fabricCAAdapter) GetAllIdentities(key bccsp.Key, cert []byte, caname st
 }
 
 // GetAffiliation returns information about the requested affiliation
-func (c *fabricCAAdapter) GetAffiliation(key bccsp.Key, cert []byte, affiliation, caname string) (*AffiliationResponse, error) {
-	logger.Debugf("Retrieving affiliation [%s]", affiliation)
+func (c *fabricCAAdapter) GetAffiliation(key bccsp.Key, cert []byte, affiliation, caname string) (*api.AffiliationResponse, error) {
+	// logger.Debugf("Retrieving affiliation [%s]", affiliation)
 
 	registrar, err := c.newIdentity(key, cert)
 	if err != nil {
@@ -408,15 +410,15 @@ func (c *fabricCAAdapter) GetAffiliation(key bccsp.Key, cert []byte, affiliation
 		return nil, errors.Wrap(err, "failed to get affiliation")
 	}
 
-	resp := &AffiliationResponse{CAName: r.CAName, AffiliationInfo: AffiliationInfo{}}
+	resp := &api.AffiliationResponse{CAName: r.CAName, AffiliationInfo: api.AffiliationInfo{}}
 	err = fillAffiliationInfo(&resp.AffiliationInfo, r.Name, r.Affiliations, r.Identities)
 
 	return resp, err
 }
 
 // GetAllAffiliations returns all affiliations that the caller is authorized to see
-func (c *fabricCAAdapter) GetAllAffiliations(key bccsp.Key, cert []byte, caname string) (*AffiliationResponse, error) {
-	logger.Debugf("Retrieving all affiliations")
+func (c *fabricCAAdapter) GetAllAffiliations(key bccsp.Key, cert []byte, caname string) (*api.AffiliationResponse, error) {
+	// logger.Debugf("Retrieving all affiliations")
 
 	registrar, err := c.newIdentity(key, cert)
 	if err != nil {
@@ -428,15 +430,15 @@ func (c *fabricCAAdapter) GetAllAffiliations(key bccsp.Key, cert []byte, caname 
 		return nil, errors.Wrap(err, "failed to get affiliations")
 	}
 
-	resp := &AffiliationResponse{CAName: r.CAName, AffiliationInfo: AffiliationInfo{}}
+	resp := &api.AffiliationResponse{CAName: r.CAName, AffiliationInfo: api.AffiliationInfo{}}
 	err = fillAffiliationInfo(&resp.AffiliationInfo, r.Name, r.Affiliations, r.Identities)
 
 	return resp, err
 }
 
 // AddAffiliation add new affiliation
-func (c *fabricCAAdapter) AddAffiliation(key bccsp.Key, cert []byte, request *AffiliationRequest) (*AffiliationResponse, error) {
-	logger.Debugf("Add affiliation [%s]", request.Name)
+func (c *fabricCAAdapter) AddAffiliation(key bccsp.Key, cert []byte, request *api.AffiliationRequest) (*api.AffiliationResponse, error) {
+	// logger.Debugf("Add affiliation [%s]", request.Name)
 
 	req := caapi.AddAffiliationRequest{
 		CAName: request.CAName,
@@ -454,15 +456,15 @@ func (c *fabricCAAdapter) AddAffiliation(key bccsp.Key, cert []byte, request *Af
 		return nil, errors.Wrap(err, "failed to add affiliation")
 	}
 
-	resp := &AffiliationResponse{CAName: r.CAName, AffiliationInfo: AffiliationInfo{}}
+	resp := &api.AffiliationResponse{CAName: r.CAName, AffiliationInfo: api.AffiliationInfo{}}
 	err = fillAffiliationInfo(&resp.AffiliationInfo, r.Name, r.Affiliations, r.Identities)
 
 	return resp, err
 }
 
 // ModifyAffiliation renames an existing affiliation on the server
-func (c *fabricCAAdapter) ModifyAffiliation(key bccsp.Key, cert []byte, request *ModifyAffiliationRequest) (*AffiliationResponse, error) {
-	logger.Debugf("Updating affiliation [%s => %s]", request.Name, request.NewName)
+func (c *fabricCAAdapter) ModifyAffiliation(key bccsp.Key, cert []byte, request *api.ModifyAffiliationRequest) (*api.AffiliationResponse, error) {
+	// logger.Debugf("Updating affiliation [%s => %s]", request.Name, request.NewName)
 
 	req := caapi.ModifyAffiliationRequest{
 		CAName:  request.CAName,
@@ -481,15 +483,15 @@ func (c *fabricCAAdapter) ModifyAffiliation(key bccsp.Key, cert []byte, request 
 		return nil, errors.Wrap(err, "failed to modify affiliation")
 	}
 
-	resp := &AffiliationResponse{CAName: r.CAName, AffiliationInfo: AffiliationInfo{}}
+	resp := &api.AffiliationResponse{CAName: r.CAName, AffiliationInfo: api.AffiliationInfo{}}
 	err = fillAffiliationInfo(&resp.AffiliationInfo, r.Name, r.Affiliations, r.Identities)
 
 	return resp, err
 }
 
 // RemoveAffiliation removes an existing affiliation from the server
-func (c *fabricCAAdapter) RemoveAffiliation(key bccsp.Key, cert []byte, request *AffiliationRequest) (*AffiliationResponse, error) {
-	logger.Debugf("Removing affiliation [%s]", request.Name)
+func (c *fabricCAAdapter) RemoveAffiliation(key bccsp.Key, cert []byte, request *api.AffiliationRequest) (*api.AffiliationResponse, error) {
+	// logger.Debugf("Removing affiliation [%s]", request.Name)
 
 	// Create remove request
 	req := caapi.RemoveAffiliationRequest{
@@ -508,28 +510,28 @@ func (c *fabricCAAdapter) RemoveAffiliation(key bccsp.Key, cert []byte, request 
 		return nil, errors.Wrap(err, "failed to remove affiliation")
 	}
 
-	resp := &AffiliationResponse{CAName: r.CAName, AffiliationInfo: AffiliationInfo{}}
+	resp := &api.AffiliationResponse{CAName: r.CAName, AffiliationInfo: api.AffiliationInfo{}}
 	err = fillAffiliationInfo(&resp.AffiliationInfo, r.Name, r.Affiliations, r.Identities)
 
 	return resp, err
 }
 
-func fillAffiliationInfo(info *AffiliationInfo, name string, affiliations []caapi.AffiliationInfo, identities []caapi.IdentityInfo) error {
+func fillAffiliationInfo(info *api.AffiliationInfo, name string, affiliations []caapi.AffiliationInfo, identities []caapi.IdentityInfo) error {
 	info.Name = name
 
 	// Add identities which have this affiliation
-	idents := []IdentityInfo{}
+	idents := []api.IdentityInfo{}
 	for _, identity := range identities {
-		idents = append(idents, IdentityInfo{ID: identity.ID, Type: identity.Type, Affiliation: identity.Affiliation, Attributes: getAllAttributes(identity.Attributes), MaxEnrollments: identity.MaxEnrollments})
+		idents = append(idents, api.IdentityInfo{ID: identity.ID, Type: identity.Type, Affiliation: identity.Affiliation, Attributes: getAllAttributes(identity.Attributes), MaxEnrollments: identity.MaxEnrollments})
 	}
 	if len(idents) > 0 {
 		info.Identities = idents
 	}
 
 	// Create child affiliations (if any)
-	children := []AffiliationInfo{}
+	children := []api.AffiliationInfo{}
 	for _, aff := range affiliations {
-		childAff := AffiliationInfo{Name: aff.Name}
+		childAff := api.AffiliationInfo{Name: aff.Name}
 		err := fillAffiliationInfo(&childAff, aff.Name, aff.Affiliations, aff.Identities)
 		if err != nil {
 			return err
@@ -542,10 +544,10 @@ func fillAffiliationInfo(info *AffiliationInfo, name string, affiliations []caap
 	return nil
 }
 
-func getAllAttributes(attrs []caapi.Attribute) []Attribute {
-	attriburtes := []Attribute{}
+func getAllAttributes(attrs []caapi.Attribute) []api.Attribute {
+	attriburtes := []api.Attribute{}
 	for _, attr := range attrs {
-		attriburtes = append(attriburtes, Attribute{Name: attr.Name, Value: attr.Value, ECert: attr.ECert})
+		attriburtes = append(attriburtes, api.Attribute{Name: attr.Name, Value: attr.Value, ECert: attr.ECert})
 	}
 
 	return attriburtes
@@ -567,16 +569,16 @@ func (c *fabricCAAdapter) newIdentity(key bccsp.Key, cert []byte) (*calib.Identi
 	return c.caClient.NewIdentity([]credential.Credential{x509Cred})
 }
 
-func getIdentityResponses(ca string, responses []caapi.IdentityInfo) []*IdentityResponse {
+func getIdentityResponses(ca string, responses []caapi.IdentityInfo) []*api.IdentityResponse {
 
-	ret := make([]*IdentityResponse, len(responses))
+	ret := make([]*api.IdentityResponse, len(responses))
 
 	for j, response := range responses {
-		var attributes []Attribute
+		var attributes []api.Attribute
 		for i := range response.Attributes {
-			attributes = append(attributes, Attribute{Name: response.Attributes[i].Name, Value: response.Attributes[i].Value, ECert: response.Attributes[i].ECert})
+			attributes = append(attributes, api.Attribute{Name: response.Attributes[i].Name, Value: response.Attributes[i].Value, ECert: response.Attributes[i].ECert})
 		}
-		ret[j] = &IdentityResponse{ID: response.ID,
+		ret[j] = &api.IdentityResponse{ID: response.ID,
 			Affiliation:    response.Affiliation,
 			Type:           response.Type,
 			Attributes:     attributes,
@@ -588,44 +590,47 @@ func getIdentityResponses(ca string, responses []caapi.IdentityInfo) []*Identity
 	return ret
 }
 
-func createFabricCAClient(caID string, cryptoSuite bccsp.CryptoSuite, config *CAConfig) (*calib.Client, error) {
+func createFabricCAClient(caID string, cryptoSuite bccsp.BCCSP, config *CAConfig) (*calib.Client, error) {
 
 	// Create new Fabric-ca client without configs
 	c := &calib.Client{
 		Config: &calib.ClientConfig{},
 	}
 
-	conf, ok := config.CAConfig(caID)
-	if !ok {
-		return nil, errors.Errorf("No CA '%s' in the configs", caID)
-	}
+	// conf, ok := config.CAConfig(caID)
+	// if !ok {
+	// 	return nil, errors.Errorf("No CA '%s' in the configs", caID)
+	// }
 
 	//set server CAName
-	c.Config.CAName = conf.CAName
+	c.Config.CAName = config.CAName
 	//set server URL
-	c.Config.URL = ToAddress(conf.URL)
+	c.Config.URL = ToAddress(config.URL)
 	//set server name
-	c.Config.ServerName, _ = conf.GRPCOptions["ssl-target-name-override"].(string)
+	c.Config.ServerName, _ = config.GRPCOptions["ssl-target-name-override"].(string)
 	//certs file list
-	c.Config.TLS.CertFiles, ok = config.CAServerCerts(caID)
-	if !ok {
-		return nil, errors.Errorf("CA '%s' has no corresponding server certs in the configs", caID)
-	}
+	// c.Config.TLS.CertFiles, ok = config.CAServerCerts(caID)
+	// if !ok {
+	// 	return nil, errors.Errorf("CA '%s' has no corresponding server certs in the configs", caID)
+	// }
+	c.Config.TLS.CertFiles = config.TLSCAServerCerts
 
 	// set key file and cert file
-	c.Config.TLS.Client.CertFile, ok = config.CAClientCert(caID)
-	if !ok {
-		return nil, errors.Errorf("CA '%s' has no corresponding client certs in the configs", caID)
-	}
+	// c.Config.TLS.Client.CertFile, ok = config.CAClientCert(caID)
+	// if !ok {
+	// 	return nil, errors.Errorf("CA '%s' has no corresponding client certs in the configs", caID)
+	// }
+	c.Config.TLS.Client.CertFile = config.TLSCAClientCert
 
-	c.Config.TLS.Client.KeyFile, ok = config.CAClientKey(caID)
-	if !ok {
-		return nil, errors.Errorf("CA '%s' has no corresponding client keys in the configs", caID)
-	}
+	// c.Config.TLS.Client.KeyFile, ok = config.CAClientKey(caID)
+	// if !ok {
+	// 	return nil, errors.Errorf("CA '%s' has no corresponding client keys in the configs", caID)
+	// }
+	c.Config.TLS.Client.KeyFile = config.TLSCAClientKey
 
 	//TLS flag enabled/disabled
-	c.Config.TLS.Enabled = IsTLSEnabled(conf.URL)
-	c.Config.MSPDir = config.CAKeyStorePath()
+	c.Config.TLS.Enabled = IsTLSEnabled(config.URL)
+	c.Config.MSPDir = config.caKeyStorePath //config.CAKeyStorePath()
 
 	//Factory opts
 	c.Config.CSP = cryptoSuite
