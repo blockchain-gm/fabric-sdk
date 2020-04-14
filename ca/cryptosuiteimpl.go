@@ -56,7 +56,7 @@ func getOptsByConfig() *bccspSw.SwOpts {
 		HashFamily: "SHA2",
 		SecLevel:   256,
 		FileKeystore: &bccspSw.FileKeystoreOpts{
-			KeyStorePath: "./keys",
+			KeyStorePath: "./keys/keystore",
 		},
 	}
 	// logger.Debug("Initialized SW cryptosuite")

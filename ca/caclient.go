@@ -72,7 +72,12 @@ func NewCAClient(orgName string, mspID string, caName string, stateStorePath str
 		return nil, err
 	}
 
-	identityManager, err := msp.NewIdentityManager(orgName, mspID, nil, "./keys", userStore, cryptoSuite, "./msp")
+	pwd, err := getCurrentDirectory()
+	if err != nil {
+		return nil, err
+	}
+
+	identityManager, err := msp.NewIdentityManager(orgName, mspID, nil, "keys", userStore, cryptoSuite, pwd)
 	if err != nil {
 		return nil, fmt.Errorf("identity manager not found for organization '%s", orgName)
 	}

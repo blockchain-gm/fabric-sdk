@@ -17,8 +17,19 @@ type MspClient struct {
 }
 
 func initCryptoSuite() (bccsp.BCCSP, error) {
+	// config := &bccspFactory.FactoryOpts{
+	// 	ProviderName: "GM",
+	// 	SwOpts: &bccspFactory.SwOpts{
+	// 		HashFamily: "SHA2",
+	// 		SecLevel:   256,
+	// 		Ephemeral:  false,
+	// 		FileKeystore: &bccspFactory.FileKeystoreOpts{
+	// 			KeyStorePath: "./keys",
+	// 		},
+	// 	},
+	// }
 	config := &bccspFactory.FactoryOpts{
-		ProviderName: "GM",
+		ProviderName: "SW",
 		SwOpts: &bccspFactory.SwOpts{
 			HashFamily: "SHA2",
 			SecLevel:   256,
@@ -53,11 +64,12 @@ func GetCAConfig() (*CAConfig, error) {
 	)
 
 	caConfig := &CAConfig{
-		ID:          "ca.org1.example.com",
-		URL:         "http://ca.org1.example.com:7054",
-		GRPCOptions: make(map[string]interface{}),
-		Registrar:   EnrollCredentials{EnrollID: "admin", EnrollSecret: "adminpw"},
-		CAName:      "ca-org1",
+		ID:             "ca.org1.example.com",
+		URL:            "http://ca.org1.example.com:7054",
+		GRPCOptions:    make(map[string]interface{}),
+		Registrar:      EnrollCredentials{EnrollID: "root", EnrollSecret: "adminpw"},
+		CAName:         "ca-org1",
+		caKeyStorePath: "./keys",
 	}
 
 	caConfig.GRPCOptions["ssl-target-name-override"] = "127.0.0.1"
@@ -66,7 +78,7 @@ func GetCAConfig() (*CAConfig, error) {
 		return nil, err
 	}
 
-	caConfig.TLSCAClientKey, err = LoadBytes("crypto-config/peerOrganizations/org1.example.com/ca/80a1b0bdb205aad91b915ad0c2bfeded0b440ea7d32b191155b9b5702b0229e0_sk")
+	caConfig.TLSCAClientKey, err = LoadBytes("crypto-config/peerOrganizations/org1.example.com/ca/00a81ff19d1fc744d5dc8c20f5bf61488ce6a9714f080642449c8327695e5789_sk")
 	if err != nil {
 		return nil, err
 	}

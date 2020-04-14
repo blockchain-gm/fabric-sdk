@@ -40,7 +40,6 @@ func (c StandardClaims) Valid() error {
 		vErr.Inner = fmt.Errorf("token is expired by %v", delta)
 		vErr.Errors |= ValidationErrorExpired
 	}
-	fmt.Println("+++", c.ExpiresAt, now)
 
 	if c.VerifyIssuedAt(now, false) == false {
 		vErr.Inner = fmt.Errorf("Token used before issued")

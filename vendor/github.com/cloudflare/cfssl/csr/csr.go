@@ -51,9 +51,12 @@ type BasicKeyRequest struct {
 	S int    `json:"size" yaml:"size"`
 }
 
-// NewBasicKeyRequest returns a default BasicKeyRequest.
+// // NewBasicKeyRequest returns a default BasicKeyRequest.
+// func NewBasicKeyRequest() *BasicKeyRequest {
+// 	return &BasicKeyRequest{"ecdsa", curveP256}
+// }
 func NewBasicKeyRequest() *BasicKeyRequest {
-	return &BasicKeyRequest{"ecdsa", curveP256}
+	return &BasicKeyRequest{"gmsm2", curveP256}
 }
 
 // Algo returns the requested key algorithm represented as a string.
@@ -69,7 +72,7 @@ func (kr *BasicKeyRequest) Size() int {
 // Generate generates a key as specified in the request. Currently,
 // only ECDSA and RSA are supported.
 func (kr *BasicKeyRequest) Generate() (crypto.PrivateKey, error) {
-	log.Debugf("generate key from request: algo=%s, size=%d", kr.Algo(), kr.Size())
+	log.Debugf("===> generate key from request: algo=%s, size=%d", kr.Algo(), kr.Size())
 	switch kr.Algo() {
 	case "rsa":
 		if kr.Size() < 2048 {
