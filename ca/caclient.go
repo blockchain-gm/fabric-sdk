@@ -28,29 +28,6 @@ func NewCAClient(orgName string, mspID string, caName string, stateStorePath str
 		return nil, errors.New("organization is missing")
 	}
 
-	// options, err := processCAClientOptions(opts...)
-	// if err != nil {
-	// 	return nil, err
-	// }
-
-	// netConfig := ctx.EndpointConfig().NetworkConfig()
-	// // viper keys are case insensitive
-	// orgConfig, ok := netConfig.Organizations[strings.ToLower(orgName)]
-	// if !ok {
-	// 	return nil, errors.New("org config retrieval failed")
-	// }
-	// if len(orgConfig.CertificateAuthorities) == 0 {
-	// 	return nil, errors.New("no CAs configured")
-	// }
-
-	// caID := options.caID
-	// if caID == "" {
-	// 	caID = orgConfig.CertificateAuthorities[0]
-	// }
-	// caConfig, ok := ctx.IdentityConfig().CAConfig(caID)
-	// if !ok {
-	// 	return nil, errors.Errorf("error initializing CA [%s]", caID)
-	// }
 	cryptoSuite, err := GetSuiteByConfig()
 	if err != nil {
 		return nil, err
@@ -72,12 +49,12 @@ func NewCAClient(orgName string, mspID string, caName string, stateStorePath str
 		return nil, err
 	}
 
-	pwd, err := getCurrentDirectory()
+	currentDir, err := getCurrentDirectory()
 	if err != nil {
 		return nil, err
 	}
 
-	identityManager, err := msp.NewIdentityManager(orgName, mspID, nil, "keys", userStore, cryptoSuite, pwd)
+	identityManager, err := msp.NewIdentityManager(orgName, mspID, nil, "keys", userStore, cryptoSuite, currentDir)
 	if err != nil {
 		return nil, fmt.Errorf("identity manager not found for organization '%s", orgName)
 	}

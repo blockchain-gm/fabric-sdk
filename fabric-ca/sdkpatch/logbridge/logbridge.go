@@ -12,6 +12,7 @@ package logbridge
 
 import (
 	"fabric-sdk/logging"
+
 	clog "github.com/cloudflare/cfssl/log"
 )
 
@@ -19,7 +20,7 @@ var logger *logging.Logger
 var cfLogBridge *cLogger
 
 func init() {
-	logger = logging.NewLogger("fabsdk/fab")
+	logger = logging.NewLogger("fabric-sdk/fabric-ca")
 	cfLogBridge = &cLogger{}
 	clog.SetLogger(cfLogBridge)
 }

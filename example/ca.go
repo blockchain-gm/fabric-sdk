@@ -36,7 +36,6 @@ func NewCaClient() (*CaClient, error) {
 }
 
 func (ca *CaClient) Register(request *api.RegistrationRequest) (string, error) {
-
 	var a []api.Attribute
 	for i := range request.Attributes {
 		a = append(a, api.Attribute{Name: request.Attributes[i].Name, Value: request.Attributes[i].Value, ECert: request.Attributes[i].ECert})

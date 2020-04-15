@@ -73,23 +73,24 @@ func GetCAConfig() (*CAConfig, error) {
 	}
 
 	caConfig.GRPCOptions["ssl-target-name-override"] = "127.0.0.1"
-	caConfig.TLSCAServerCerts, err = getServerCerts("./crypto-config/peerOrganizations/org1.example.com/ca/ca.org1.example.com-cert.pem")
-	if err != nil {
-		return nil, err
-	}
 
-	caConfig.TLSCAClientKey, err = LoadBytes("crypto-config/peerOrganizations/org1.example.com/ca/00a81ff19d1fc744d5dc8c20f5bf61488ce6a9714f080642449c8327695e5789_sk")
-	if err != nil {
-		return nil, err
-	}
+	if IsTLSEnabled(caConfig.URL) {
+		caConfig.TLSCAServerCerts, err = getServerCerts("./crypto-config/peerOrganizations/org1.example.com/ca/ca.org1.example.com-cert.pem")
+		if err != nil {
+			return nil, err
+		}
 
-	caConfig.TLSCAClientCert, err = LoadBytes("crypto-config/peerOrganizations/org1.example.com/ca/ca.org1.example.com-cert.pem")
-	if err != nil {
-		return nil, err
-	}
+		caConfig.TLSCAClientKey, err = LoadBytes("crypto-config/peerOrganizations/org1.example.com/ca/00a81ff19d1fc744d5dc8c20f5bf61488ce6a9714f080642449c8327695e5789_sk")
+		if err != nil {
+			return nil, err
+		}
 
+		caConfig.TLSCAClientCert, err = LoadBytes("crypto-config/peerOrganizations/org1.example.com/ca/ca.org1.example.com-cert.pem")
+		if err != nil {
+			return nil, err
+		}
+	}
 	return caConfig, nil
-
 }
 
 func GetMspClient(workDir string) (*MspClient, error) {

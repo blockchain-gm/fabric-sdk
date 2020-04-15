@@ -1,0 +1,31 @@
+{
+   "SecType": "SW",
+   "SW": {
+      "Provider": "SW",
+      "HashAlgo": "SHA2",
+      "Level": 256
+   },
+   "GM": {
+      "Provider": "GM",
+      "HashAlgo": "gmsm3",
+      "Level": 256
+   },
+   "Ca": {
+      "ca-org1": {
+         "OrgName": "org1",
+         "OrgMSPID": "mspOrg1",
+         "CaName": "ca-org1",
+         "KeyStorePath": "keys",
+         "EnrollID": "root",
+         "EnrollSecret": "adminpwd",
+         "CaID": "ca.org1.example.com",
+         "URL": "http://ca.org1.example.com:7054",
+         "SSLOverride": "127.0.0.1",
+         "Tls": {
+            "ServerCertPath": "./configs/ssl/ca.org1.example.com-cert.pem",
+            "ClientKeyPath": "./configs/ssl/00a81ff19d1fc744d5dc8c20f5bf61488ce6a9714f080642449c8327695e5789_sk",
+            "ClientCertPath": "./configs/ssl/ca.org1.example.com-cert.pem"
+         }
+      }
+   }
+}

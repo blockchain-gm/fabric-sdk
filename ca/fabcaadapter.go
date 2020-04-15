@@ -12,13 +12,7 @@ import (
 	"fabric-sdk/fabric-ca/api"
 	"fabric-sdk/fabric-ca/lib/client/credential"
 
-	// "fabric-sdk/bccsp"
-	// "fabric-sdk/bccsp/config/endpoint"
 	"fabric-sdk/fabric-ca/lib/client/credential/x509"
-
-	// "fabric-sdk/fabric-sdk-go/pkg/msp"
-	// "fabric-sdk/fabric-sdk-go/pkg/msp/api"
-	// "github.com/hyperledger/fabric-sdk-go/pkg/msp"
 
 	"github.com/pkg/errors"
 
@@ -26,12 +20,6 @@ import (
 
 	caapi "fabric-sdk/fabric-ca/api"
 	calib "fabric-sdk/fabric-ca/lib"
-	// fabric-sdk/fabric-sdk-go/internal/github.com/hyperledger/fabric-ca/lib/client/credential"
-	// fabric-sdk/fabric-sdk-go/internal/github.com/hyperledger/fabric-ca/lib/client/credential/x509"
-	// fabric-sdk/fabric-sdk-go/pkg/common/providers/bccsp"
-	// fabric-sdk/fabric-sdk-go/pkg/common/providers/msp"
-	// fabric-sdk/fabric-sdk-go/pkg/bccsp/config/endpoint"
-	// fabric-sdk/fabric-sdk-go/pkg/msp/api"
 )
 
 // fabricCAAdapter translates between SDK lingo and native Fabric CA API

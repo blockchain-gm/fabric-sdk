@@ -27,7 +27,7 @@ import (
 )
 
 var (
-	logger = flogging.MustGetLogger("bccsp_sw")
+	logger = flogging.MustGetLogger("bccsp")
 )
 
 // CSP provides a generic implementation of the BCCSP interface based

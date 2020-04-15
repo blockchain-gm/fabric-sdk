@@ -8,15 +8,11 @@ package msp
 
 import (
 	"path/filepath"
-	// "strings"
 
 	"fabric-sdk/bccsp"
 	"fabric-sdk/kv"
 
 	"github.com/pkg/errors"
-	// "github.com/hyperledger/fabric-sdk-go/pkg/common/providers/core"
-	// "github.com/hyperledger/fabric-sdk-go/pkg/common/providers/fab"
-	// "github.com/hyperledger/fabric-sdk-go/pkg/common/providers/msp"
 )
 
 type CertKeyPair struct {
