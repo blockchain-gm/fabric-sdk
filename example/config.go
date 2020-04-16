@@ -55,7 +55,7 @@ type CaConfig struct {
 	CaID         string
 	URL          string
 	SSLOverride  string
-	Tls          *CaTLS
+	TLS          *CaTLS
 }
 
 type FabConfig struct {
@@ -114,7 +114,7 @@ func LoadDBConfig(parentPath string) (*FabConfig, error) {
 				CaID:         CA_ID,
 				URL:          URL,
 				SSLOverride:  SSL_OVERRIDE,
-				Tls: &CaTLS{
+				TLS: &CaTLS{
 					ServerCertPath: TLS_CA_SERVER_CERT,
 					ClientKeyPath:  TLS_CA_CLIENT_KEY,
 					ClientCertPath: TLS_CA_CLIENT_CERT,

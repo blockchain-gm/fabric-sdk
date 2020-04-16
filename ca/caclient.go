@@ -1,6 +1,8 @@
 package ca
 
 import (
+	"crypto/x509"
+	"encoding/pem"
 	"fabric-sdk/bccsp"
 	"fabric-sdk/fabric-ca/api"
 	"fabric-sdk/kv"
@@ -71,6 +73,105 @@ func NewCAClient(orgName string, mspID string, caName string, stateStorePath str
 		provider:        provider,
 	}
 	return mgr, nil
+}
+
+func (c *CAClientImpl) GetSigningIdentity(id string) (*msp.User, error) {
+	if id == "" {
+		return nil, msp.ErrUserNotFound
+	}
+
+	registrar, err := c.identityManager.GetSigningIdentity(id)
+	if err != nil {
+		return nil, err
+	}
+	return registrar, nil
+}
+
+func (c *CAClientImpl) GetUserCertificate(id string) (*x509.Certificate, []byte, error) {
+	if id == "" {
+		return nil, nil, msp.ErrUserNotFound
+	}
+
+	registrar, err := c.identityManager.GetSigningIdentity(id)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	certBytes := registrar.EnrollmentCertificate()
+	if certBytes != nil {
+		decoded, _ := pem.Decode(certBytes)
+		if decoded == nil {
+			return nil, nil, errors.New("Failed cert decoding")
+		}
+
+		cert, err := x509.ParseCertificate(decoded.Bytes)
+		if err != nil {
+			return nil, nil, fmt.Errorf("failed to parse certificate: %s", err)
+		}
+
+		return cert, certBytes, nil
+	}
+	return nil, nil, nil
+}
+
+//Verify
+func (c *CAClientImpl) Verify(id string, msg []byte, sig []byte, hashFamily string) error {
+	if id == "" {
+		return msp.ErrUserNotFound
+	}
+
+	registrar, err := c.identityManager.GetSigningIdentity(id)
+	if err != nil {
+		return err
+	}
+
+	hashOpt, err := bccsp.GetHashOpt(hashFamily)
+	if err != nil {
+		return fmt.Errorf("failed getting hash function options, %s", err.Error())
+	}
+
+	digest, err := c.cryptoSuite.Hash(msg, hashOpt)
+	if err != nil {
+		return fmt.Errorf("failed computing digest, %s", err.Error())
+	}
+
+	valid, err := c.cryptoSuite.Verify(registrar.PrivateKey(), sig, digest, nil)
+	if err != nil {
+		return fmt.Errorf("could not determine the validity of the signature, %s", err.Error())
+	} else if !valid {
+		return errors.New("The signature is invalid")
+	}
+	return nil
+}
+
+func (c *CAClientImpl) Sign(id string, msg []byte, hashFamily string) ([]byte, error) {
+	if id == "" {
+		return nil, msp.ErrUserNotFound
+	}
+
+	registrar, err := c.identityManager.GetSigningIdentity(id)
+	if err != nil {
+		return nil, err
+	}
+
+	hashOpt, err := bccsp.GetHashOpt(hashFamily)
+	if err != nil {
+		return nil, fmt.Errorf("failed getting hash function options, %s", err.Error())
+	}
+	digest, err := c.cryptoSuite.Hash(msg, hashOpt)
+	if err != nil {
+		return nil, fmt.Errorf("failed computing digest, %s", err.Error())
+	}
+	// fmt.Printf("Sign: digest: %X \n", digest)
+
+	// Sign
+	// signature, err := c.cryptoSuite.Sign(registrar.PrivateKey(), digest, nil)
+	// if err != nil {
+	// 	return nil, err
+	// }
+
+	// return base64.StdEncoding.EncodeToString(signature), nil
+	return c.cryptoSuite.Sign(registrar.PrivateKey(), digest, nil)
 }
 
 func (c *CAClientImpl) Enroll(request *api.EnrollmentRequest) error {
@@ -170,7 +271,6 @@ func (c *CAClientImpl) RemoveIdentity(request *api.RemoveIdentityRequest) (*api.
 }
 
 func (c *CAClientImpl) GetIdentity(id, caname string) (*api.IdentityResponse, error) {
-
 	if c.adapter == nil {
 		return nil, fmt.Errorf("no CAs configured for organization: %s", c.orgName)
 	}
@@ -392,7 +492,6 @@ func (c *CAClientImpl) RemoveAffiliation(request *api.AffiliationRequest) (*api.
 }
 
 func (c *CAClientImpl) getRegistrar(enrollID string, enrollSecret string) (*msp.User, error) {
-
 	if enrollID == "" {
 		return nil, api.ErrCARegistrarNotFound
 	}

@@ -1,6 +1,11 @@
 package main
 
 import (
+	"crypto/ecdsa"
+	"crypto/x509"
+	"encoding/base64"
+	"encoding/pem"
+	"errors"
 	"fabric-sdk/ca"
 	"fabric-sdk/fabric-ca/api"
 	"fmt"
@@ -33,6 +38,55 @@ func NewCaClient() (*CaClient, error) {
 		return nil, err
 	}
 	return &CaClient{Cli: ca}, nil
+}
+
+func (ca *CaClient) GetPubKey(ID string) (string, []byte, error) {
+	if ca != nil && ca.Cli != nil {
+		user, err := ca.Cli.GetSigningIdentity(ID)
+		certBytes := user.EnrollmentCertificate()
+		if err != nil || certBytes == nil {
+			return "", nil, err
+		}
+
+		decoded, _ := pem.Decode(certBytes)
+		if decoded == nil {
+			return "", nil, errors.New("Failed cert decoding")
+		}
+
+		x509Cert, err := x509.ParseCertificate(decoded.Bytes)
+		if err != nil {
+			return "", nil, fmt.Errorf("failed to parse certificate: %s", err)
+		}
+		if x509Cert.PublicKeyAlgorithm == x509.ECDSA {
+			ecdsaPublicKey := x509Cert.PublicKey.(*ecdsa.PublicKey)
+			x509EncodedPub, _ := x509.MarshalPKIXPublicKey(ecdsaPublicKey)
+			pemEncodedPub := pem.EncodeToMemory(&pem.Block{Type: "PUBLIC KEY", Bytes: x509EncodedPub})
+			return x509Cert.PublicKeyAlgorithm.String(), pemEncodedPub, nil
+		} else {
+			return "", nil, fmt.Errorf("%s", "unknow algorithm parse error")
+		}
+	}
+	return "", nil, fmt.Errorf("%s", "invalid parameter")
+}
+func (ca *CaClient) GetUserCertificate(id string) (*x509.Certificate, []byte, error) {
+	return ca.Cli.GetUserCertificate(id)
+}
+
+func (ca *CaClient) Sign(id string, msg []byte) (string, error) {
+	signature, err := ca.Cli.Sign(id, msg, "SHA256")
+	if err != nil {
+		return "", err
+	}
+	return base64.StdEncoding.EncodeToString(signature), nil
+}
+
+func (ca *CaClient) Verify(id string, msg []byte, signature string) error {
+	//解码
+	signBytes, err := base64.StdEncoding.DecodeString(signature)
+	if err != nil {
+		return err
+	}
+	return ca.Cli.Verify(id, msg, signBytes, "SHA256")
 }
 
 func (ca *CaClient) Register(request *api.RegistrationRequest) (string, error) {
@@ -98,5 +152,33 @@ func main() {
 		fmt.Println(err.Error())
 		return
 	}
-	fmt.Printf("%+v", *identInfo)
+	fmt.Printf("%+v\n", *identInfo)
+
+	alg, pubKey, err := ca.GetPubKey(name)
+	if err != nil {
+		fmt.Println(err.Error())
+		return
+	}
+	fmt.Println("GetPubKey:", alg)
+	fmt.Println("GetPubKey:", string(pubKey))
+
+	_, cert, err := ca.GetUserCertificate(name)
+	if err != nil {
+		fmt.Println(err.Error())
+		return
+	}
+	fmt.Println("cert:", string(cert))
+
+	signature, err := ca.Sign(name, []byte("hello world"))
+	if err != nil {
+		fmt.Println(err.Error())
+		return
+	}
+	fmt.Printf("signature: %s", signature)
+
+	err = ca.Verify(name, []byte("hello world"), signature)
+	if err != nil {
+		fmt.Printf("Verify: %s", err.Error())
+	}
+	fmt.Println("signature ok")
 }
