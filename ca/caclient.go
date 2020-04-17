@@ -114,6 +114,14 @@ func (c *CAClientImpl) GetUserCertificate(id string) (*x509.Certificate, []byte,
 	return nil, nil, nil
 }
 
+func (c *CAClientImpl) GetUserPriKey(id string) ([]byte, string, error) {
+	priKey, ski, err := c.identityManager.GetUserPriKey(id)
+	if err != nil {
+		return nil, ski, err
+	}
+	return priKey, ski, nil
+}
+
 //Verify
 func (c *CAClientImpl) Verify(id string, msg []byte, sig []byte, hashFamily string) error {
 	if id == "" {

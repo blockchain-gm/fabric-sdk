@@ -16,7 +16,7 @@ import (
 var r *rand.Rand
 
 func init() {
-	r = rand.New(rand.NewSource(time.Now().Unix()))
+	r = rand.New(rand.NewSource(time.Now().UnixNano()))
 }
 
 func RandString(len int) string {
@@ -27,6 +27,24 @@ func RandString(len int) string {
 	}
 	return string(bytes)
 }
+
+// const (
+// 	// NonceSize is the default NonceSize
+// 	NonceSize = 24
+// )
+
+// // GetRandomBytes returns len random looking bytes
+// func GetRandomBytes(len int) (string, error) {
+// 	key := make([]byte, len)
+
+// 	// TODO: rand could fill less bytes then len
+// 	_, err := rand.Read(key)
+// 	if err != nil {
+// 		return "", err
+// 	}
+
+// 	return base64.StdEncoding.EncodeToString(key), nil
+// }
 
 type CaClient struct {
 	Cli *ca.CAClientImpl
@@ -68,6 +86,18 @@ func (ca *CaClient) GetPubKey(ID string) (string, []byte, error) {
 	}
 	return "", nil, fmt.Errorf("%s", "invalid parameter")
 }
+
+func (ca *CaClient) GetPriKey(ID string) ([]byte, string, error) {
+	if ca != nil && ca.Cli != nil {
+		prikey, ski, err := ca.Cli.GetUserPriKey(ID)
+		if err != nil {
+			return nil, ski, err
+		}
+		return prikey, ski, nil
+	}
+	return nil, "", fmt.Errorf("%s", "invalid parameter")
+}
+
 func (ca *CaClient) GetUserCertificate(id string) (*x509.Certificate, []byte, error) {
 	return ca.Cli.GetUserCertificate(id)
 }
@@ -161,6 +191,14 @@ func main() {
 	}
 	fmt.Println("GetPubKey:", alg)
 	fmt.Println("GetPubKey:", string(pubKey))
+
+	priKey, ski, err := ca.GetPriKey(name)
+	if err != nil {
+		fmt.Println("GetPriKey:", err.Error())
+		return
+	}
+	fmt.Println("GetPriKey:", string(priKey))
+	fmt.Println("pri key ski:", ski)
 
 	_, cert, err := ca.GetUserCertificate(name)
 	if err != nil {

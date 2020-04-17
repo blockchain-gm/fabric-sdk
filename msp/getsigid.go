@@ -7,6 +7,7 @@ SPDX-License-Identifier: Apache-2.0
 package msp
 
 import (
+	"encoding/hex"
 	"fabric-sdk/bccsp"
 	"fabric-sdk/fabric-ca/util"
 	"fabric-sdk/kv"
@@ -160,6 +161,22 @@ func (mgr *IdentityManager) GetUser(username string) (*User, error) { //nolint
 	return u, nil
 }
 
+func (mgr *IdentityManager) GetUserPriKey(username string) ([]byte, string, error) { //nolint
+	u, err := mgr.loadUserFromStore(username)
+	if err != nil {
+		if err != ErrUserNotFound {
+			return nil, "", errors.WithMessage(err, "loading user from store failed")
+		}
+		return nil, "", err
+	}
+
+	privateKey, err := mgr.getPriKeyBytesFromKeyStore(username, u.privateKey.SKI())
+	if err != nil {
+		return nil, "", errors.WithMessage(err, "getting private key from cert failed")
+	}
+	return privateKey, hex.EncodeToString(u.privateKey.SKI()) + "_sk", nil
+}
+
 func (mgr *IdentityManager) getEmbeddedCertBytes(username string) []byte {
 	return mgr.embeddedUsers[strings.ToLower(username)].Cert
 }
@@ -251,4 +268,28 @@ func (mgr *IdentityManager) getPrivateKeyFromKeyStore(username string, ski []byt
 		return util.ImportBCCSPKeyFromPEMBytes(pemBytes, mgr.cryptoSuite, true)
 	}
 	return nil, kv.ErrKeyValueNotFound
+}
+
+//add new func
+func (mgr *IdentityManager) getPriKeyBytesFromKeyStore(username string, ski []byte) ([]byte, error) {
+	pemBytes, err := mgr.getPrivateKeyPemFromKeyStore(username, ski)
+	if err != nil {
+		return nil, err
+	}
+	if pemBytes == nil {
+		return nil, kv.ErrKeyValueNotFound
+	}
+	return pemBytes, nil
+}
+
+//add new func
+func (mgr *IdentityManager) getPriKeyBytesFromCert(username string, cert []byte) ([]byte, error) {
+	if cert == nil {
+		return nil, errors.New("cert is nil")
+	}
+	pubKey, err := GetPublicKeyFromCert(cert, mgr.cryptoSuite)
+	if err != nil {
+		return nil, errors.WithMessage(err, "fetching public key from cert failed")
+	}
+	return mgr.getPriKeyBytesFromKeyStore(username, pubKey.SKI())
 }
