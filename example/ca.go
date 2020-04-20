@@ -198,7 +198,7 @@ func main() {
 		return
 	}
 	fmt.Println("GetPriKey:", string(priKey))
-	fmt.Println("pri key ski:", ski)
+	fmt.Println("priKey SKI:", ski)
 
 	_, cert, err := ca.GetUserCertificate(name)
 	if err != nil {

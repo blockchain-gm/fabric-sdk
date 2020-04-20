@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -135,11 +136,11 @@ func LoadDBConfig(parentPath string) (*FabConfig, error) {
 	return config, nil
 }
 
-// func main() {
-// 	config, err := LoadDBConfig("./")
-// 	if err != nil {
-// 		fmt.Println(err.Error())
-// 		return
-// 	}
-// 	fmt.Println(config)
-// }
+func main() {
+	config, err := LoadDBConfig("./")
+	if err != nil {
+		fmt.Println(err.Error())
+		return
+	}
+	fmt.Println(config)
+}
