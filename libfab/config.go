@@ -27,7 +27,7 @@ var (
 	Channel     string   = "mychannel"
 	ChainCode   string   = "standard"
 	Mspid       string   = "Org1MSP"
-	TLSCaCerts  []string = []string{"/home/liuhy/iview/fabTx/crypto-config/peerOrganizations/org1.example.com/tlsca/tlsca.org1.example.com-cert.pem", "/home/liuhy/iview/fabTx/crypto-config/ordererOrganizations/example.com/tlsca/tlsca.example.com-cert.pem"}
+	TLSCaCerts  []string = []string{"./crypto-config/peerOrganizations/org1.example.com/tlsca/tlsca.org1.example.com-cert.pem", "./crypto-config/ordererOrganizations/example.com/tlsca/tlsca.example.com-cert.pem"}
 )
 
 func CheckFileIsExist(filename string) bool {
