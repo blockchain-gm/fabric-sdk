@@ -2,11 +2,10 @@ package libfab
 
 import (
 	"encoding/json"
+	"fabric-sdk/libca"
 	"io/ioutil"
 	"os"
 	"path/filepath"
-
-	"fabric-sdk/libca"
 
 	// "github.com/gogo/protobuf/proto"
 	"github.com/golang/protobuf/proto"
@@ -14,17 +13,12 @@ import (
 )
 
 type FabConfig struct {
-	PeerAddr    string `json:"peer_addr"`
-	OrdererAddr string `json:"orderer_addr"`
-	Channel     string `json:"channel"`
-	Chaincode   string `json:"chaincode"`
-	// Args          []string `json:"args"`
-	MSPID string `json:"mspid"`
-	// PrivateKey    string   `json:"private_key"`
-	// SignCert      string   `json:"sign_cert"`
-	TLSCACerts []string `json:"tls_ca_certs"`
-	// NumOfConn     int      `json:"num_of_conn"`
-	// ClientPerConn int      `json:"client_per_conn"`
+	PeerAddr    string   `json:"peer_addr"`
+	OrdererAddr string   `json:"orderer_addr"`
+	Channel     string   `json:"channel"`
+	Chaincode   string   `json:"chaincode"`
+	MSPID       string   `json:"mspid"`
+	TLSCACerts  []string `json:"tls_ca_certs"`
 }
 
 var (
@@ -97,32 +91,17 @@ func (c *FabConfig) GetEnvCache() (*OrgEnvOption, error) {
 		MSPID:      c.MSPID,
 		TLSCACerts: certs,
 	}, nil
-
 }
 
 func (o *OrgEnvOption) LoadCrypto(uID string, caClient *libca.CaClient) (*Crypto, error) {
-	// conf := CryptoConfig{
-	// 	MSPID: o.MSPID,
-	// 	// PrivKey:    c.PrivateKey,
-	// 	// SignCert:   c.SignCert,
-	// 	TLSCACerts: o.TLSCACerts,
-	// }
-
-	privateKey, _, err := caClient.GetPriKey(uID)
+	privateKey, cert, certBytes, err := caClient.GetUserKeys(uID)
+	if err != nil {
+		return nil, err
+	}
 	priv, err := GetPrivateKey(privateKey)
 	if err != nil {
 		return nil, err
 	}
-
-	cert, certBytes, err := caClient.GetUserCertificate(uID)
-	if err != nil {
-		return nil, err
-	}
-
-	// cert, certBytes, err := GetCertificate(conf.SignCert)
-	// if err != nil {
-	// 	panic(err)
-	// }
 
 	id := &msp.SerializedIdentity{
 		Mspid:   o.MSPID,
@@ -133,11 +112,6 @@ func (o *OrgEnvOption) LoadCrypto(uID string, caClient *libca.CaClient) (*Crypto
 		panic(err)
 	}
 
-	// certs, err := GetTLSCACerts(conf.TLSCACerts)
-	// if err != nil {
-	// 	panic(err)
-	// }
-
 	return &Crypto{
 		Creator:    name,
 		PrivKey:    priv,
@@ -145,51 +119,3 @@ func (o *OrgEnvOption) LoadCrypto(uID string, caClient *libca.CaClient) (*Crypto
 		TLSCACerts: o.TLSCACerts,
 	}, nil
 }
-
-// func (c FabConfig) LoadCrypto(uID string, caClient *libca.CaClient) (*Crypto, error) {
-// 	crypto := &Crypto{
-// 		Name:     uID,
-// 		CaClient: caClient,
-// 		MSPID:    c.MSPID,
-// 	}
-
-// 	_, certBytes, err := crypto.CaClient.GetUserCertificate(uID)
-// 	if err != nil {
-// 		return nil, err
-// 	}
-
-// 	// priv, err := GetPrivateKey(conf.PrivKey)
-// 	// if err != nil {
-// 	// 	panic(err)
-// 	// }
-
-// 	// cert, certBytes, err := GetCertificate(conf.SignCert)
-// 	// if err != nil {
-// 	// 	panic(err)
-// 	// }
-
-// 	id := &msp.SerializedIdentity{
-// 		Mspid:   crypto.MSPID,
-// 		IdBytes: certBytes,
-// 	}
-
-// 	identity, err := proto.Marshal(id)
-// 	if err != nil {
-// 		return nil, err
-// 	}
-
-// 	certs, err := GetTLSCACerts(c.TLSCACerts)
-// 	if err != nil {
-// 		return nil, err
-// 	}
-
-// 	// return &Crypto{
-// 	// 	Creator:    name,
-// 	// 	PrivKey:    priv,
-// 	// 	SignCert:   cert,
-// 	// 	TLSCACerts: certs,
-// 	// }
-// 	crypto.Creator = identity
-// 	crypto.TLSCACerts = certs
-// 	return crypto, nil
-// }

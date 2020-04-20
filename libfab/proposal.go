@@ -12,7 +12,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-func CreateProposal(signer *Crypto, channel, ccname string, args ...string) (*peer.Proposal, string) {
+func CreateProposal(signer *Crypto, channel, ccname string, args ...string) (*peer.Proposal, string, error) {
 	var argsInByte [][]byte
 	for _, arg := range args {
 		argsInByte = append(argsInByte, []byte(arg))
@@ -28,15 +28,15 @@ func CreateProposal(signer *Crypto, channel, ccname string, args ...string) (*pe
 
 	creator, err := signer.Serialize()
 	if err != nil {
-		panic(err)
+		return nil, "", err
 	}
 
 	prop, txID, err := utils.CreateChaincodeProposal(common.HeaderType_ENDORSER_TRANSACTION, channel, invocation, creator)
 	if err != nil {
-		panic(err)
+		return nil, "", err
 	}
 
-	return prop, txID
+	return prop, txID, nil
 }
 
 func SignProposal(prop *peer.Proposal, signer *Crypto) (*peer.SignedProposal, error) {
@@ -58,20 +58,14 @@ func CreateSignedTx(proposal *peer.Proposal, signer *Crypto, resps ...*peer.Prop
 		return nil, errors.New("at least one proposal response is required")
 	}
 
-	// the original header
 	hdr, err := utils.GetHeader(proposal.Header)
 	if err != nil {
 		return nil, err
 	}
-
-	// the original payload
 	pPayl, err := utils.GetChaincodeProposalPayload(proposal.Payload)
 	if err != nil {
 		return nil, err
 	}
-
-	// check that the signer is the same that is referenced in the header
-	// TODO: maybe worth removing?
 	signerBytes, err := signer.Serialize()
 	if err != nil {
 		return nil, err
@@ -81,18 +75,14 @@ func CreateSignedTx(proposal *peer.Proposal, signer *Crypto, resps ...*peer.Prop
 	if err != nil {
 		return nil, err
 	}
-
 	if bytes.Compare(signerBytes, shdr.Creator) != 0 {
 		return nil, errors.New("signer must be the same as the one referenced in the header")
 	}
-
-	// get header extensions so we have the visibility field
 	hdrExt, err := utils.GetChaincodeHeaderExtension(hdr)
 	if err != nil {
 		return nil, err
 	}
 
-	// ensure that all actions are bitwise equal and that they are successful
 	var a1 []byte
 	for n, r := range resps {
 		if n == 0 {
@@ -108,54 +98,43 @@ func CreateSignedTx(proposal *peer.Proposal, signer *Crypto, resps ...*peer.Prop
 		}
 	}
 
-	// fill endorsements
 	endorsements := make([]*peer.Endorsement, len(resps))
 	for n, r := range resps {
 		endorsements[n] = r.Endorsement
 	}
 
-	// create ChaincodeEndorsedAction
 	cea := &peer.ChaincodeEndorsedAction{ProposalResponsePayload: resps[0].Payload, Endorsements: endorsements}
-
-	// obtain the bytes of the proposal payload that will go to the transaction
 	propPayloadBytes, err := utils.GetBytesProposalPayloadForTx(pPayl, hdrExt.PayloadVisibility)
 	if err != nil {
 		return nil, err
 	}
 
-	// serialize the chaincode action payload
 	cap := &peer.ChaincodeActionPayload{ChaincodeProposalPayload: propPayloadBytes, Action: cea}
 	capBytes, err := utils.GetBytesChaincodeActionPayload(cap)
 	if err != nil {
 		return nil, err
 	}
 
-	// create a transaction
 	taa := &peer.TransactionAction{Header: hdr.SignatureHeader, Payload: capBytes}
 	taas := make([]*peer.TransactionAction, 1)
 	taas[0] = taa
 	tx := &peer.Transaction{Actions: taas}
 
-	// serialize the tx
 	txBytes, err := utils.GetBytesTransaction(tx)
 	if err != nil {
 		return nil, err
 	}
 
-	// create the payload
 	payl := &common.Payload{Header: hdr, Data: txBytes}
 	paylBytes, err := utils.GetBytesPayload(payl)
 	if err != nil {
 		return nil, err
 	}
 
-	// sign the payload
 	sig, err := signer.Sign(paylBytes)
 	if err != nil {
 		return nil, err
 	}
-
-	// here's the envelope
 	return &common.Envelope{Payload: paylBytes, Signature: sig}, nil
 }
 

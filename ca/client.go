@@ -3,6 +3,7 @@ package ca
 import (
 	"fabric-sdk/bccsp"
 	bccspFactory "fabric-sdk/bccsp/factory"
+	"fabric-sdk/fabric-ca/api"
 	// "github.com/hyperledger/fabric-sdk-go/pkg/util/pathvar"
 )
 
@@ -58,34 +59,37 @@ func initCryptoSuite() (bccsp.BCCSP, error) {
 // 	TLSCAClientKey   []byte
 // }
 
-func GetCAConfig() (*CAConfig, error) {
+func GetCAConfig(fconfig *api.CaConfig) (*CAConfig, error) {
 	var (
 		err error
 	)
 
 	caConfig := &CAConfig{
-		ID:             "ca.org1.example.com",
-		URL:            "http://ca.org1.example.com:7054",
+		ID:             fconfig.CaID, //"ca.org1.example.com",
+		URL:            fconfig.URL,  // "http://ca.org1.example.com:7054",
 		GRPCOptions:    make(map[string]interface{}),
-		Registrar:      EnrollCredentials{EnrollID: "root", EnrollSecret: "adminpw"},
-		CAName:         "ca-org1",
-		caKeyStorePath: "./keys",
+		Registrar:      EnrollCredentials{EnrollID: fconfig.EnrollID, EnrollSecret: fconfig.EnrollSecret}, // EnrollCredentials{EnrollID: "root", EnrollSecret: "adminpw"},
+		CAName:         fconfig.CaName,                                                                    // "ca-org1",
+		caKeyStorePath: fconfig.KeyStorePath,                                                              //"./keys",
 	}
 
-	caConfig.GRPCOptions["ssl-target-name-override"] = "127.0.0.1"
+	caConfig.GRPCOptions["ssl-target-name-override"] = fconfig.SSLOverride //"127.0.0.1"
 
 	if IsTLSEnabled(caConfig.URL) {
-		caConfig.TLSCAServerCerts, err = getServerCerts("./crypto-config/peerOrganizations/org1.example.com/ca/ca.org1.example.com-cert.pem")
+		// caConfig.TLSCAServerCerts, err = getServerCerts("./crypto-config/peerOrganizations/org1.example.com/ca/ca.org1.example.com-cert.pem")
+		caConfig.TLSCAServerCerts, err = getServerCerts(fconfig.TLS.ServerCertPath)
 		if err != nil {
 			return nil, err
 		}
 
-		caConfig.TLSCAClientKey, err = LoadBytes("crypto-config/peerOrganizations/org1.example.com/ca/00a81ff19d1fc744d5dc8c20f5bf61488ce6a9714f080642449c8327695e5789_sk")
+		// caConfig.TLSCAClientKey, err = LoadBytes("crypto-config/peerOrganizations/org1.example.com/ca/00a81ff19d1fc744d5dc8c20f5bf61488ce6a9714f080642449c8327695e5789_sk")
+		caConfig.TLSCAClientKey, err = LoadBytes(fconfig.TLS.ClientKeyPath)
 		if err != nil {
 			return nil, err
 		}
 
-		caConfig.TLSCAClientCert, err = LoadBytes("crypto-config/peerOrganizations/org1.example.com/ca/ca.org1.example.com-cert.pem")
+		// caConfig.TLSCAClientCert, err = LoadBytes("crypto-config/peerOrganizations/org1.example.com/ca/ca.org1.example.com-cert.pem")
+		caConfig.TLSCAClientCert, err = LoadBytes(fconfig.TLS.ClientCertPath)
 		if err != nil {
 			return nil, err
 		}
@@ -93,13 +97,13 @@ func GetCAConfig() (*CAConfig, error) {
 	return caConfig, nil
 }
 
-func GetMspClient(workDir string) (*MspClient, error) {
+func GetMspClient(workDir string, fconfig *api.CaConfig) (*MspClient, error) {
 	var (
 		err      error
 		caClient = new(MspClient)
 	)
 
-	caClient.CAConfig, err = GetCAConfig()
+	caClient.CAConfig, err = GetCAConfig(fconfig)
 	if err != nil {
 		return nil, err
 	}

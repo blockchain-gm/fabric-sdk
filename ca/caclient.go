@@ -25,17 +25,26 @@ type CAClientImpl struct {
 }
 
 // NewCAClient creates a new CA CAClient instance
-func NewCAClient(orgName string, mspID string, caName string, stateStorePath string, Registrar *EnrollCredentials) (*CAClientImpl, error) {
+func NewCAClient(orgName string, mspID string, caName string, stateStorePath string, Registrar *EnrollCredentials, caConfig *api.FabConfig) (*CAClientImpl, error) {
+	var (
+		caConf api.CaConfig
+		ok     bool
+	)
+
 	if orgName == "" {
 		return nil, errors.New("organization is missing")
 	}
 
-	cryptoSuite, err := GetSuiteByConfig()
+	cryptoSuite, err := GetSuiteByConfig(caConfig.SecType)
 	if err != nil {
 		return nil, err
 	}
 
-	config, err := GetCAConfig()
+	if caConf, ok = caConfig.Ca[caName]; !ok {
+		return nil, errors.New("ca config not exist")
+	}
+
+	config, err := GetCAConfig(&caConf)
 	if err != nil {
 		return nil, err
 	}
@@ -56,7 +65,8 @@ func NewCAClient(orgName string, mspID string, caName string, stateStorePath str
 		return nil, err
 	}
 
-	identityManager, err := msp.NewIdentityManager(orgName, mspID, nil, "keys", userStore, cryptoSuite, currentDir)
+	// identityManager, err := msp.NewIdentityManager(orgName, mspID, nil, "keys", userStore, cryptoSuite, currentDir)
+	identityManager, err := msp.NewIdentityManager(orgName, mspID, nil, caConf.KeyStorePath, userStore, cryptoSuite, currentDir)
 	if err != nil {
 		return nil, fmt.Errorf("identity manager not found for organization '%s", orgName)
 	}
@@ -120,6 +130,14 @@ func (c *CAClientImpl) GetUserPriKey(id string) ([]byte, string, error) {
 		return nil, ski, err
 	}
 	return priKey, ski, nil
+}
+
+func (c *CAClientImpl) GetUserKeys(id string) ([]byte, []byte, error) {
+	priKey, user, err := c.identityManager.GetUserKeys(id)
+	if err != nil {
+		return nil, nil, err
+	}
+	return priKey, user.EnrollmentCertificate(), nil
 }
 
 //Verify
@@ -211,7 +229,6 @@ func (c *CAClientImpl) Enroll(request *api.EnrollmentRequest) error {
 }
 
 func (c *CAClientImpl) CreateIdentity(request *api.IdentityRequest) (*api.IdentityResponse, error) {
-
 	if c.adapter == nil {
 		return nil, fmt.Errorf("no CAs configured for organization: %s", c.orgName)
 	}

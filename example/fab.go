@@ -12,37 +12,47 @@ import (
 )
 
 func main() {
-	config, err := libfab.LoadConfig("./")
+	fabConfig, err := libfab.LoadConfig("./")
 	if err != nil {
 		fmt.Println(err.Error())
 		return
 	}
 
-	ca, err := libca.NewCaClient()
+	caConfig, err := libca.LoadDBConfig("./")
 	if err != nil {
 		fmt.Println(err.Error())
 		return
 	}
 
-	orgEnv, err := config.GetEnvCache()
+	ca, err := libca.NewCaClient("ca-org1", caConfig)
+	if err != nil {
+		fmt.Println(err.Error())
+		return
+	}
+	orgEnv, err := fabConfig.GetEnvCache()
 	if err != nil {
 		fmt.Println(err.Error())
 		return
 	}
 
-	signer, err := orgEnv.LoadCrypto("SBOMYARTTB", ca)
+	signer, err := orgEnv.LoadCrypto("root", ca)
 	if err != nil {
 		fmt.Println(err.Error())
 		return
 	}
 	_ = signer
 
-	proposal, txID := libfab.CreateProposal(
+	proposal, txID, err := libfab.CreateProposal(
 		signer,
-		config.Channel,
+		fabConfig.Channel,
 		"standard",
 		"putstandard", "key", "value",
 	)
+	if err != nil {
+		fmt.Println(err.Error())
+		return
+	}
+
 	fmt.Println("TxID:", txID)
 	// assember := &Assembler{Signer: crypto}
 
@@ -53,7 +63,7 @@ func main() {
 		// panic(err)
 	}
 
-	endorser, err := libfab.CreateEndorserClient(config.PeerAddr, signer.TLSCACerts)
+	endorser, err := libfab.CreateEndorserClient(fabConfig.PeerAddr, signer.TLSCACerts)
 	if err != nil {
 		fmt.Println(err.Error())
 		return
@@ -73,7 +83,13 @@ func main() {
 		// panic(err)
 	}
 
-	broadcaster := libfab.CreateBroadcaster(config.OrdererAddr, signer)
+	broadcaster, err := libfab.CreateBroadcaster(fabConfig.OrdererAddr, signer)
+	if err != nil {
+		fmt.Println(err.Error())
+		return
+		// panic(err)
+	}
+
 	go func() {
 		for {
 			res, err := broadcaster.C.Recv()
@@ -90,7 +106,6 @@ func main() {
 				fmt.Printf("Recv errouneous status: %s\n", res.Status)
 				panic("bcast recv err")
 			}
-
 		}
 	}()
 
@@ -100,9 +115,14 @@ func main() {
 		return
 	}
 
-	observer := libfab.CreateObserver(config.PeerAddr, config.Channel, signer)
+	watchBlock, err := libfab.CreateWatchServer(fabConfig.PeerAddr, fabConfig.Channel, signer)
+	if err != nil {
+		fmt.Printf("CreateWatchServer err: %s\n", err)
+		return
+	}
+
 	start := time.Now()
-	go observer.Start(start)
-	observer.Wait()
+	go watchBlock.Start(start)
+	watchBlock.Wait()
 
 }

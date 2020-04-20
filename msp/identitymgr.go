@@ -69,9 +69,8 @@ func NewIdentityManager(orgName, mspID string, users map[string]CertKeyPair, cry
 	// }
 
 	mgr := &IdentityManager{
-		orgName:  orgName,
-		orgMSPID: mspID,
-		// config:          endpointConfig,
+		orgName:         orgName,
+		orgMSPID:        mspID,
 		cryptoSuite:     cryptoSuite,
 		mspPrivKeyStore: mspPrivKeyStore,
 		mspCertStore:    mspCertStore,

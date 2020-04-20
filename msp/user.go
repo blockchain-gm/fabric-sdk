@@ -13,8 +13,6 @@ import (
 	"github.com/golang/protobuf/proto"
 	// pb_msp "github.com/hyperledger/fabric-protos-go/msp"
 	pb_msp "github.com/hyperledger/fabric/protos/msp"
-	// "github.com/hyperledger/fabric-sdk-go/pkg/common/providers/core"
-	// "github.com/hyperledger/fabric-sdk-go/pkg/common/providers/msp"
 	"github.com/pkg/errors"
 )
 

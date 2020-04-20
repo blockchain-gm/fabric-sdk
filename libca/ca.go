@@ -9,18 +9,33 @@ import (
 	"fabric-sdk/ca"
 	"fabric-sdk/fabric-ca/api"
 	"fmt"
+	"path"
 )
 
 type CaClient struct {
-	Cli *ca.CAClientImpl
+	Cli      *ca.CAClientImpl
+	CaConfig *api.CaConfig
 }
 
-func NewCaClient() (*CaClient, error) {
-	ca, err := ca.NewCAClient("org1", "Org1MSP", "ca-org1", "./keys/signcerts", &ca.EnrollCredentials{EnrollID: "root", EnrollSecret: "adminpw"})
-	if err != nil {
-		return nil, err
+func NewCaClient(caname string, config *api.FabConfig) (*CaClient, error) {
+	var (
+		caConfig api.CaConfig
+		ok       bool
+	)
+
+	if caConfig, ok = config.Ca[caname]; ok {
+		ca, err := ca.NewCAClient(caConfig.OrgName,
+			caConfig.OrgMSPID,
+			caConfig.CaName,
+			path.Join(caConfig.KeyStorePath, "signcerts"),
+			&ca.EnrollCredentials{EnrollID: caConfig.EnrollID, EnrollSecret: caConfig.EnrollSecret},
+			config)
+		if err != nil {
+			return nil, err
+		}
+		return &CaClient{Cli: ca, CaConfig: &caConfig}, nil
 	}
-	return &CaClient{Cli: ca}, nil
+	return nil, errors.New("ca config not exist")
 }
 
 func (ca *CaClient) GetPubKey(ID string) (string, []byte, error) {
@@ -52,9 +67,9 @@ func (ca *CaClient) GetPubKey(ID string) (string, []byte, error) {
 	return "", nil, fmt.Errorf("%s", "invalid parameter")
 }
 
-func (ca *CaClient) GetPriKey(ID string) ([]byte, string, error) {
+func (ca *CaClient) GetPriKey(id string) ([]byte, string, error) {
 	if ca != nil && ca.Cli != nil {
-		prikey, ski, err := ca.Cli.GetUserPriKey(ID)
+		prikey, ski, err := ca.Cli.GetUserPriKey(id)
 		if err != nil {
 			return nil, ski, err
 		}
@@ -65,6 +80,29 @@ func (ca *CaClient) GetPriKey(ID string) ([]byte, string, error) {
 
 func (ca *CaClient) GetUserCertificate(id string) (*x509.Certificate, []byte, error) {
 	return ca.Cli.GetUserCertificate(id)
+}
+
+func (ca *CaClient) GetUserKeys(id string) ([]byte, *x509.Certificate, []byte, error) {
+	priKey, certBytes, err := ca.Cli.GetUserKeys(id)
+	if err != nil {
+		return nil, nil, nil, err
+	}
+
+	if certBytes != nil {
+		decoded, _ := pem.Decode(certBytes)
+		if decoded == nil {
+			return nil, nil, nil, errors.New("Failed cert decoding")
+		}
+
+		cert, err := x509.ParseCertificate(decoded.Bytes)
+		if err != nil {
+			return nil, nil, nil, fmt.Errorf("failed to parse certificate: %s", err)
+		}
+
+		return priKey, cert, certBytes, nil
+	}
+
+	return nil, nil, nil, fmt.Errorf("%s", "user certificate null")
 }
 
 func (ca *CaClient) Sign(id string, msg []byte) (string, error) {

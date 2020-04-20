@@ -8,30 +8,42 @@ import (
 	"github.com/pkg/errors"
 )
 
-func GetSuiteByConfig() (bccsp.BCCSP, error) {
-	opts := getOptsByConfig()
-	bccsp, err := getBCCSPFromOpts(opts)
+func GetSuiteByConfig(secType string) (bccsp.BCCSP, error) {
+	var (
+		opts *bccspSw.SwOpts
+	)
+
+	if secType == "SW" {
+		opts = getOptsByConfig()
+	}
+
+	bccsp, err := getBCCSPFromOpts(secType, opts)
 	if err != nil {
 		return nil, err
 	}
 	return bccsp, nil
 }
 
-func GetSuiteWithDefaultEphemeral() (bccsp.BCCSP, error) {
-	opts := getEphemeralOpts()
+func GetSuiteWithDefaultEphemeral(secType string) (bccsp.BCCSP, error) {
+	var (
+		opts *bccspSw.SwOpts
+	)
 
-	bccsp, err := getBCCSPFromOpts(opts)
+	opts = getEphemeralOpts()
+
+	bccsp, err := getBCCSPFromOpts(secType, opts)
 	if err != nil {
 		return nil, err
 	}
 	return bccsp, nil
 }
 
-func getBCCSPFromOpts(config *bccspSw.SwOpts) (bccsp.BCCSP, error) {
+func getBCCSPFromOpts(secType string, config *bccspSw.SwOpts) (bccsp.BCCSP, error) {
 	f := &bccspSw.SWFactory{}
 
 	conf := &bccspSw.FactoryOpts{
-		ProviderName: "SW",
+		// ProviderName: "SW",
+		ProviderName: secType,
 		SwOpts:       config,
 	}
 

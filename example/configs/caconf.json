@@ -17,14 +17,14 @@
          "CaName": "ca-org1",
          "KeyStorePath": "keys",
          "EnrollID": "root",
-         "EnrollSecret": "adminpwd",
+         "EnrollSecret": "adminpw",
          "CaID": "ca.org1.example.com",
          "URL": "http://ca.org1.example.com:7054",
          "SSLOverride": "127.0.0.1",
          "TLS": {
-            "ServerCertPath": "./configs/ssl/ca.org1.example.com-cert.pem",
-            "ClientKeyPath": "./configs/ssl/00a81ff19d1fc744d5dc8c20f5bf61488ce6a9714f080642449c8327695e5789_sk",
-            "ClientCertPath": "./configs/ssl/ca.org1.example.com-cert.pem"
+            "ServerCertPath": "./crypto-config/peerOrganizations/org1.example.com/ca/ca.org1.example.com-cert.pem",
+            "ClientKeyPath": "./crypto-config/peerOrganizations/org1.example.com/ca/00a81ff19d1fc744d5dc8c20f5bf61488ce6a9714f080642449c8327695e5789_sk",
+            "ClientCertPath": "./crypto-config/peerOrganizations/org1.example.com/ca/ca.org1.example.com-cert.pem"
          }
       }
    }

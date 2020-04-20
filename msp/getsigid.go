@@ -177,6 +177,23 @@ func (mgr *IdentityManager) GetUserPriKey(username string) ([]byte, string, erro
 	return privateKey, hex.EncodeToString(u.privateKey.SKI()) + "_sk", nil
 }
 
+func (mgr *IdentityManager) GetUserKeys(username string) ([]byte, *User, error) {
+	u, err := mgr.loadUserFromStore(username)
+	if err != nil {
+		if err != ErrUserNotFound {
+			return nil, nil, errors.WithMessage(err, "loading user from store failed")
+		}
+		return nil, nil, err
+	}
+
+	privateKey, err := mgr.getPriKeyBytesFromKeyStore(username, u.privateKey.SKI())
+	if err != nil {
+		return nil, nil, errors.WithMessage(err, "getting private key from cert failed")
+	}
+
+	return privateKey, u, nil
+}
+
 func (mgr *IdentityManager) getEmbeddedCertBytes(username string) []byte {
 	return mgr.embeddedUsers[strings.ToLower(username)].Cert
 }

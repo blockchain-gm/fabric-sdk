@@ -23,24 +23,6 @@ func RandString(len int) string {
 	return string(bytes)
 }
 
-// const (
-// 	// NonceSize is the default NonceSize
-// 	NonceSize = 24
-// )
-
-// // GetRandomBytes returns len random looking bytes
-// func GetRandomBytes(len int) (string, error) {
-// 	key := make([]byte, len)
-
-// 	// TODO: rand could fill less bytes then len
-// 	_, err := rand.Read(key)
-// 	if err != nil {
-// 		return "", err
-// 	}
-
-// 	return base64.StdEncoding.EncodeToString(key), nil
-// }
-
 func main() {
 	config, err := libca.LoadDBConfig("./")
 	if err != nil {
@@ -49,7 +31,7 @@ func main() {
 	}
 	fmt.Println(config)
 
-	ca, err := libca.NewCaClient()
+	ca, err := libca.NewCaClient("ca-org1", config)
 	if err != nil {
 		fmt.Println(err.Error())
 		return

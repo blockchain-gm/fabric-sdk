@@ -79,7 +79,6 @@ func GetTLSCACerts(files []string) ([][]byte, error) {
 
 		certs = append(certs, in)
 	}
-
 	return certs, nil
 }
 
@@ -99,11 +98,6 @@ func toPEM(in []byte) ([]byte, error) {
 }
 
 func GetPrivateKey(in []byte) (*ecdsa.PrivateKey, error) {
-	// in, err := ioutil.ReadFile(f)
-	// if err != nil {
-	// 	return nil, err
-	// }
-
 	k, err := utils.PEMtoPrivateKey(in, []byte{})
 	if err != nil {
 		return nil, err
@@ -124,7 +118,6 @@ func GetCertificate(f string) (*x509.Certificate, []byte, error) {
 	}
 
 	block, _ := pem.Decode(in)
-
 	c, err := x509.ParseCertificate(block.Bytes)
 	return c, in, err
 }
