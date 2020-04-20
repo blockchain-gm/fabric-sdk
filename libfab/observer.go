@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/hyperledger/fabric/protos/common"
 	"github.com/hyperledger/fabric/protos/peer"
 )
 
@@ -14,12 +15,17 @@ type Observer struct {
 }
 
 func CreateObserver(addr, channel string, crypto *Crypto) *Observer {
+	var (
+		seek *common.Envelope
+		err  error
+	)
+
 	deliverer, err := CreateDeliverFilteredClient(addr, crypto.TLSCACerts)
 	if err != nil {
 		panic(err)
 	}
 
-	seek, err := CreateSignedDeliverNewestEnv(channel, crypto)
+	seek, err = CreateSignedDeliverNewestEnv(channel, crypto)
 	if err != nil {
 		panic(err)
 	}

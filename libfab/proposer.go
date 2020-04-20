@@ -3,7 +3,7 @@ package libfab
 import "github.com/hyperledger/fabric/protos/orderer"
 
 type Broadcaster struct {
-	c orderer.AtomicBroadcast_BroadcastClient
+	C orderer.AtomicBroadcast_BroadcastClient
 }
 
 func CreateBroadcaster(addr string, crypto *Crypto) *Broadcaster {
@@ -12,5 +12,5 @@ func CreateBroadcaster(addr string, crypto *Crypto) *Broadcaster {
 		panic(err)
 	}
 
-	return &Broadcaster{c: client}
+	return &Broadcaster{C: client}
 }

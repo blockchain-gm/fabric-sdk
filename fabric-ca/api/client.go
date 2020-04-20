@@ -393,7 +393,8 @@ func (ar *AttributeRequest) IsRequired() bool {
 // NewBasicKeyRequest returns the BasicKeyRequest object that is constructed
 // from the object returned by the csr.NewBasicKeyRequest() function
 func NewBasicKeyRequest() *BasicKeyRequest {
-	bkr := csr.NewBasicKeyRequest()
+	// bkr := csr.NewBasicKeyRequest()
+	bkr := csr.NewKeyRequest()
 	bkr.A = "ecdsa" // "gmsm2"
 	bkr.S = 256     //csr.curveP256
 	return &BasicKeyRequest{Algo: bkr.A, Size: bkr.S}

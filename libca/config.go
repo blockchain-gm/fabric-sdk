@@ -19,7 +19,7 @@ const (
 	GM_LEVEL    = 256
 
 	ORG_NAME      = "org1"
-	ORG_MSPID     = "mspOrg1"
+	ORG_MSPID     = "Org1MSP"
 	CA_NAME       = "ca-org1"
 	KEY_STOREPATH = "keys"
 	ENROLL_ID     = "root"
@@ -74,7 +74,7 @@ func CheckFileIsExist(filename string) bool {
 }
 
 func LoadDBConfig(parentPath string) (*FabConfig, error) {
-	path := filepath.Join(parentPath, "configs/fabconf.json")
+	path := filepath.Join(parentPath, "configs/caconf.json")
 	fpath, err := filepath.Abs(path)
 	if err != nil {
 		return nil, err

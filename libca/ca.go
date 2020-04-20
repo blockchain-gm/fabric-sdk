@@ -16,7 +16,7 @@ type CaClient struct {
 }
 
 func NewCaClient() (*CaClient, error) {
-	ca, err := ca.NewCAClient("org1", "mspOrg1", "ca-org1", "./keys/signcerts", &ca.EnrollCredentials{EnrollID: "root", EnrollSecret: "adminpw"})
+	ca, err := ca.NewCAClient("org1", "Org1MSP", "ca-org1", "./keys/signcerts", &ca.EnrollCredentials{EnrollID: "root", EnrollSecret: "adminpw"})
 	if err != nil {
 		return nil, err
 	}

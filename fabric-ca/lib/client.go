@@ -586,8 +586,12 @@ func (c *Client) checkX509Enrollment() error {
 	return errors.New("X509 enrollment information does not exist")
 }
 
-func newCfsslBasicKeyRequest(bkr *api.BasicKeyRequest) *csr.BasicKeyRequest {
-	return &csr.BasicKeyRequest{A: bkr.Algo, S: bkr.Size}
+// func newCfsslBasicKeyRequest(bkr *api.BasicKeyRequest) *csr.BasicKeyRequest {
+// 	return &csr.BasicKeyRequest{A: bkr.Algo, S: bkr.Size}
+// }
+
+func newCfsslBasicKeyRequest(bkr *api.BasicKeyRequest) *csr.KeyRequest {
+	return &csr.KeyRequest{A: bkr.Algo, S: bkr.Size}
 }
 
 // NormalizeURL normalizes a URL (from cfssl)
