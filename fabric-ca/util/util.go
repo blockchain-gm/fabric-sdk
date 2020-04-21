@@ -34,6 +34,7 @@ import (
 
 	"fabric-sdk/bccsp"
 	factory "fabric-sdk/fabric-ca/sdkpatch/cryptosuitebridge"
+	log "fabric-sdk/fabric-ca/sdkpatch/logbridge"
 
 	// "fabric-sdk/core"
 
@@ -47,6 +48,9 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
+	"github.com/tjfoc/gmsm/sm2"
+
+	// sm2 "github.com/tjfoc/gmsm/sm2"
 	"golang.org/x/crypto/ocsp"
 )
 
@@ -142,15 +146,32 @@ func Marshal(from interface{}, what string) ([]byte, error) {
 // @param body The body of an HTTP request
 // @param fabCACompatibilityMode will set auth token signing for Fabric CA 1.3 (true) or Fabric 1.4+ (false)
 
-func CreateToken(csp bccsp.BCCSP, cert []byte, key bccsp.Key, method, uri string, body []byte, fabCACompatibilityMode bool) (string, error) {
-	x509Cert, err := GetX509CertificateFromPEM(cert)
+func CreateToken(providerName string, csp bccsp.BCCSP, cert []byte, key bccsp.Key, method, uri string, body []byte, fabCACompatibilityMode bool) (string, error) {
+	// x509Cert, err := GetX509CertificateFromPEM(cert)
+	// certificate, err := GetX509CertificateFromRaw(providerName, cert)
+	x509Cert, err := GetX509CertificateFromGMPEM(providerName, cert)
 	if err != nil {
 		return "", err
 	}
-	publicKey := x509Cert.PublicKey
 
+	// var (
+	// 	x509Cert  *x509.Certificate
+	// 	sm2Cert   *sm2.Certificate
+	// 	publicKey interface{}
+	// )
+	// if providerName == "SW" {
+	// 	x509Cert = certificate.(*x509.Certificate)
+	// 	publicKey = x509Cert.PublicKey
+	// } else {
+	// 	//GM
+	// 	sm2Cert = certificate.(*sm2.Certificate)
+	// 	publicKey = sm2Cert.PublicKey
+	// }
+
+	publicKey := x509Cert.PublicKey
 	var token string
 
+	fmt.Println("publicKey type:", reflect.TypeOf(publicKey), fabCACompatibilityMode)
 	//The RSA Key Gen is commented right now as there is bccsp does
 	switch publicKey.(type) {
 	/*
@@ -160,13 +181,60 @@ func CreateToken(csp bccsp.BCCSP, cert []byte, key bccsp.Key, method, uri string
 				return "", err
 			}
 	*/
+
+	case *sm2.PublicKey:
+		fmt.Println("PublicKey.(type) = *sm2.PublicKey", providerName)
+		token, err = GenSM2Token(csp, cert, key, method, uri, body, fabCACompatibilityMode)
+		if err != nil {
+			return "", err
+		}
+
 	case *ecdsa.PublicKey:
+		fmt.Println("PublicKey.(type) = *ecdsa.PublicKey", providerName)
 		token, err = GenECDSAToken(csp, cert, key, method, uri, body, fabCACompatibilityMode)
 		if err != nil {
 			return "", err
 		}
+	default:
+		log.Debugf("PublicKey=%T", publicKey)
 	}
+
 	return token, nil
+}
+
+func GenSM2Token(csp bccsp.BCCSP, cert []byte, key bccsp.Key, method, uri string, body []byte, fabCACompatibilityMode bool) (string, error) {
+	b64body := B64Encode(body)
+	b64cert := B64Encode(cert)
+	b64uri := B64Encode([]byte(uri))
+	payload := method + "." + b64uri + "." + b64body + "." + b64cert
+
+	// TODO remove this condition once Fabric CA v1.3 is not supported by the SDK anymore
+	if fabCACompatibilityMode {
+		payload = b64body + "." + b64cert
+	}
+	return genSM2Token(csp, key, b64cert, payload)
+}
+
+func genSM2Token(csp bccsp.BCCSP, key bccsp.Key, b64cert, payload string) (string, error) {
+	digest, digestError := csp.Hash([]byte(payload), factory.GetSHAOpts())
+	if digestError != nil {
+		return "", errors.WithMessage(digestError, fmt.Sprintf("Hash failed on '%s'", payload))
+	}
+
+	ecSignature, err := csp.Sign(key, digest, nil)
+	if err != nil {
+		return "", errors.WithMessage(err, "BCCSP signature generation failure")
+	}
+	if len(ecSignature) == 0 {
+		return "", errors.New("BCCSP signature creation failed. Signature must be different than nil")
+	}
+
+	b64sig := B64Encode(ecSignature)
+	token := b64cert + "." + b64sig
+
+	fmt.Printf("pk2 %T \n sig %T\n digest %s\n", key, b64cert, B64Encode(digest))
+	return token, nil
+
 }
 
 //GenRSAToken signs the http body and cert with RSA using RSA private key
@@ -210,11 +278,13 @@ func GenECDSAToken(csp bccsp.BCCSP, cert []byte, key bccsp.Key, method, uri stri
 }
 
 func genECDSAToken(csp bccsp.BCCSP, key bccsp.Key, b64cert, payload string) (string, error) {
+	fmt.Printf("payload %s\n", payload)
 	digest, digestError := csp.Hash([]byte(payload), factory.GetSHAOpts())
 	if digestError != nil {
 		return "", errors.WithMessage(digestError, fmt.Sprintf("Hash failed on '%s'", payload))
 	}
 
+	fmt.Printf("key Type: %T\n", key)
 	ecSignature, err := csp.Sign(key, digest, nil)
 	if err != nil {
 		return "", errors.WithMessage(err, "BCCSP signature generation failure")
@@ -225,7 +295,17 @@ func genECDSAToken(csp bccsp.BCCSP, key bccsp.Key, b64cert, payload string) (str
 
 	b64sig := B64Encode(ecSignature)
 	token := b64cert + "." + b64sig
+	fmt.Printf("pk2 %T \n sig %T\n digest %s\n", key, b64cert, B64Encode(digest))
+	fmt.Printf("ecSignature:%s\n", base64.StdEncoding.EncodeToString(ecSignature))
 
+	// pubKey, err := key.PublicKey()
+	// if err != nil {
+	// 	return "", err
+	// }
+
+	// sm2PubKey := pubKey.(sm2.PublicKey)
+
+	// sm2PubKey.Verify([]byte(payload), ecSignature)
 	return token, nil
 
 }

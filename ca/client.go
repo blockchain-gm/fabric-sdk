@@ -21,7 +21,7 @@ func initCryptoSuite() (bccsp.BCCSP, error) {
 	// config := &bccspFactory.FactoryOpts{
 	// 	ProviderName: "GM",
 	// 	SwOpts: &bccspFactory.SwOpts{
-	// 		HashFamily: "SHA2",
+	// 		HashFamily: "GMSM3",
 	// 		SecLevel:   256,
 	// 		Ephemeral:  false,
 	// 		FileKeystore: &bccspFactory.FileKeystoreOpts{
@@ -29,6 +29,7 @@ func initCryptoSuite() (bccsp.BCCSP, error) {
 	// 		},
 	// 	},
 	// }
+
 	config := &bccspFactory.FactoryOpts{
 		ProviderName: "SW",
 		SwOpts: &bccspFactory.SwOpts{

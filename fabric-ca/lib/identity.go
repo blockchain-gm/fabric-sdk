@@ -34,17 +34,19 @@ import (
 
 // Identity is fabric-ca's implementation of an identity
 type Identity struct {
-	name   string
-	client *Client
-	creds  []credential.Credential
+	name         string
+	client       *Client
+	creds        []credential.Credential
+	providerName string
 }
 
 // NewIdentity is the constructor for identity
-func NewIdentity(client *Client, name string, creds []credential.Credential) *Identity {
+func NewIdentity(providerName string, client *Client, name string, creds []credential.Credential) *Identity {
 	id := new(Identity)
 	id.name = name
 	id.client = client
 	id.creds = creds
+	id.providerName = providerName
 	return id
 }
 
@@ -447,7 +449,7 @@ func (i *Identity) addTokenAuthHdr(req *http.Request, body []byte) error {
 	var token string
 	var err error
 	for _, cred := range i.creds {
-		token, err = cred.CreateToken(req, body, compatibility)
+		token, err = cred.CreateToken(i.providerName, req, body, compatibility)
 		if err != nil {
 			return errors.WithMessage(err, "Failed to add token authorization header")
 		}

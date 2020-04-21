@@ -209,8 +209,22 @@ func (c *Client) GenCSR(req *api.CSRInfo, id string) ([]byte, bccsp.Key, error) 
 	cr := c.newCertificateRequest(req)
 	cr.CN = id
 
+	//SW
+	// if (cr.KeyRequest == nil) || (cr.KeyRequest.Size() == 0 && cr.KeyRequest.Algo() == "") {
+	// 	cr.KeyRequest = newCfsslBasicKeyRequest(api.NewBasicKeyRequest())
+	// }
+	//GM
 	if (cr.KeyRequest == nil) || (cr.KeyRequest.Size() == 0 && cr.KeyRequest.Algo() == "") {
-		cr.KeyRequest = newCfsslBasicKeyRequest(api.NewBasicKeyRequest())
+		keyRequest := api.NewBasicKeyRequest()
+		if c.Config.BCCSPType == "SW" {
+			keyRequest.Algo = "ecdsa"
+			keyRequest.Size = 256
+			cr.KeyRequest = newCfsslBasicKeyRequest(keyRequest)
+		} else {
+			keyRequest.Algo = "gmsm2" //"GMSM3" //"gmsm2"
+			keyRequest.Size = 256
+			cr.KeyRequest = newCfsslBasicKeyRequest(keyRequest)
+		}
 	}
 
 	key, cspSigner, err := util.BCCSPKeyRequestGenerate(cr, c.csp)
@@ -219,9 +233,21 @@ func (c *Client) GenCSR(req *api.CSRInfo, id string) ([]byte, bccsp.Key, error) 
 		return nil, nil, err
 	}
 
-	csrPEM, err := csr.Generate(cspSigner, cr)
+	var (
+		csrPEM []byte
+	)
+
+	if c.Config.BCCSPType == "SW" {
+		csrPEM, err = csr.Generate(cspSigner, cr)
+		if err != nil {
+			log.Debugf("failed generating SW CSR: %s", err)
+			return nil, nil, err
+		}
+	}
+	//GM
+	csrPEM, err = generate(cspSigner, cr, key)
 	if err != nil {
-		log.Debugf("failed generating CSR: %s", err)
+		log.Debugf("failed generating GM CSR: %s", err)
 		return nil, nil, err
 	}
 
@@ -331,7 +357,7 @@ func (c *Client) newEnrollmentResponse(result *common.EnrollmentResponseNet, id 
 	if err != nil {
 		return nil, errors.WithMessage(err, "Invalid response format from server")
 	}
-	signer, err := x509cred.NewSigner(key, certByte)
+	signer, err := x509cred.NewSigner(c.Config.BCCSPType, key, certByte)
 	if err != nil {
 		return nil, err
 	}
@@ -341,7 +367,7 @@ func (c *Client) newEnrollmentResponse(result *common.EnrollmentResponseNet, id 
 		return nil, err
 	}
 	resp := &EnrollmentResponse{
-		Identity: NewIdentity(c, id, []credential.Credential{x509Cred}),
+		Identity: NewIdentity(c.Config.BCCSPType, c, id, []credential.Credential{x509Cred}),
 	}
 	err = c.net2LocalCAInfo(&result.ServerInfo, &resp.CAInfo)
 	if err != nil {
@@ -387,7 +413,7 @@ func (c *Client) NewIdentity(creds []credential.Credential) (*Identity, error) {
 		return nil, err
 	}
 	if len(creds) == 1 {
-		return NewIdentity(c, name, creds), nil
+		return NewIdentity(c.Config.BCCSPType, c, name, creds), nil
 	}
 
 	//TODO: Get the enrollment ID from the creds...they all should return same value
@@ -400,12 +426,12 @@ func (c *Client) NewIdentity(creds []credential.Credential) (*Identity, error) {
 	// 		return nil, errors.New("Specified credentials belong to different identities, they should be long to same identity")
 	// 	}
 	// }
-	return NewIdentity(c, name, creds), nil
+	return NewIdentity(c.Config.BCCSPType, c, name, creds), nil
 }
 
 // NewX509Identity creates a new identity
 func (c *Client) NewX509Identity(name string, creds []credential.Credential) x509cred.Identity {
-	return NewIdentity(c, name, creds)
+	return NewIdentity(c.Config.BCCSPType, c, name, creds)
 }
 
 // GetCSP returns BCCSP instance associated with this client

@@ -25,6 +25,7 @@ type IdentityManager struct {
 	orgName  string
 	orgMSPID string
 	// config          fab.EndpointConfig
+	providerName    string
 	cryptoSuite     bccsp.BCCSP
 	embeddedUsers   map[string]CertKeyPair
 	mspPrivKeyStore kv.KVStore
@@ -33,7 +34,8 @@ type IdentityManager struct {
 }
 
 // NewIdentityManager creates a new instance of IdentityManager
-func NewIdentityManager(orgName, mspID string, users map[string]CertKeyPair, cryptoPath string, userStore kv.UserStore, cryptoSuite bccsp.BCCSP, cryptoConfigPath string) (*IdentityManager, error) {
+func NewIdentityManager(orgName, mspID string, users map[string]CertKeyPair, cryptoPath string, userStore kv.UserStore,
+	cryptoSuite bccsp.BCCSP, providerName string, cryptoConfigPath string) (*IdentityManager, error) {
 
 	// netConfig := endpointConfig.NetworkConfig()
 	// // viper keys are case insensitive
@@ -71,6 +73,7 @@ func NewIdentityManager(orgName, mspID string, users map[string]CertKeyPair, cry
 	mgr := &IdentityManager{
 		orgName:         orgName,
 		orgMSPID:        mspID,
+		providerName:    providerName,
 		cryptoSuite:     cryptoSuite,
 		mspPrivKeyStore: mspPrivKeyStore,
 		mspCertStore:    mspCertStore,

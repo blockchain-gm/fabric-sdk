@@ -38,7 +38,9 @@ type ClientConfig struct {
 	ID         api.RegistrationRequest
 	Revoke     api.RevocationRequest
 	CAInfo     api.GetCAInfoRequest
-	CAName     string      `help:"Name of CA"`
+	CAName     string `help:"Name of CA"`
+
+	BCCSPType  string      //add for gm or sm
 	CSP        bccsp.BCCSP `mapstructure:"bccsp" hide:"true"`
 	ServerName string      `help:"CA server name to be used in case of host name override"`
 

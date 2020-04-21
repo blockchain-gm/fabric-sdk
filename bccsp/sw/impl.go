@@ -20,14 +20,15 @@ import (
 	"reflect"
 
 	"fabric-sdk/bccsp"
-	// "fabric-sdk/flogging"
+
+	// "github.com/hyperledger/fabric/common/flogging"
 	flogging "fabric-sdk/bccsp/sdkpatch/logbridge"
 
 	"github.com/pkg/errors"
 )
 
 var (
-	logger = flogging.MustGetLogger("bccsp")
+	logger = flogging.MustGetLogger("bccsp_sw")
 )
 
 // CSP provides a generic implementation of the BCCSP interface based

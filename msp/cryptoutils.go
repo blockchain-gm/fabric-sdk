@@ -26,10 +26,10 @@ import (
 // var logger = logging.NewLogger("fabsdk/core")
 
 // GetPrivateKeyFromCert will return private key represented by SKI in cert's public key
-func GetPrivateKeyFromCert(cert []byte, cs bccsp.BCCSP) (bccsp.Key, error) {
+func GetPrivateKeyFromCert(providerName string, cert []byte, cs bccsp.BCCSP) (bccsp.Key, error) {
 
 	// get the public key in the right format
-	certPubK, err := GetPublicKeyFromCert(cert, cs)
+	certPubK, err := GetPublicKeyFromCert(providerName, cert, cs)
 	if err != nil {
 		return nil, errors.WithMessage(err, "Failed to import certificate's public key")
 	}
@@ -52,20 +52,24 @@ func GetPrivateKeyFromCert(cert []byte, cs bccsp.BCCSP) (bccsp.Key, error) {
 }
 
 // GetPublicKeyFromCert will return public key the from cert
-func GetPublicKeyFromCert(cert []byte, cs bccsp.BCCSP) (bccsp.Key, error) {
+func GetPublicKeyFromCert(providerName string, cert []byte, cs bccsp.BCCSP) (bccsp.Key, error) {
 
-	dcert, _ := pem.Decode(cert)
-	if dcert == nil {
-		return nil, errors.Errorf("Unable to decode cert bytes [%v]", cert)
-	}
+	// dcert, _ := pem.Decode(cert)
+	// if dcert == nil {
+	// 	return nil, errors.Errorf("Unable to decode cert bytes [%v]", cert)
+	// }
 
-	x509Cert, err := x509.ParseCertificate(dcert.Bytes)
+	// x509Cert, err := x509.ParseCertificate(dcert.Bytes)
+	// if err != nil {
+	// 	return nil, errors.Errorf("Unable to parse cert from decoded bytes: %s", err)
+	// }
+
+	certificate, err := GetX509CertificateFromRaw(providerName, cert)
 	if err != nil {
 		return nil, errors.Errorf("Unable to parse cert from decoded bytes: %s", err)
 	}
-
 	// get the public key in the right format
-	key, err := cs.KeyImport(x509Cert, factory.GetX509PublicKeyImportOpts(true))
+	key, err := cs.KeyImport(certificate, factory.GetX509PublicKeyImportOpts(true))
 	if err != nil {
 		return nil, errors.WithMessage(err, "Failed to import certificate's public key")
 	}

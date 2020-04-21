@@ -98,7 +98,7 @@ func (cred *Credential) SetVal(val interface{}) error {
 // private key is not found in the keystore managed by BCCSP
 func (cred *Credential) Load() error {
 	var err error
-	cred.val, err = NewSigner(cred.keyFile, cred.certFile)
+	cred.val, err = NewSigner("GM", cred.keyFile, cred.certFile)
 	if err != nil {
 		return err
 	}
@@ -113,8 +113,8 @@ func (cred *Credential) Store() error {
 }
 
 // CreateToken creates token based on this X509 credential
-func (cred *Credential) CreateToken(req *http.Request, reqBody []byte, fabCACompatibilityMode bool) (string, error) {
-	return util.CreateToken(cred.getCSP(), cred.val.certBytes, cred.val.key, req.Method, req.URL.RequestURI(), reqBody, fabCACompatibilityMode)
+func (cred *Credential) CreateToken(providerName string, req *http.Request, reqBody []byte, fabCACompatibilityMode bool) (string, error) {
+	return util.CreateToken(providerName, cred.getCSP(), cred.val.certBytes, cred.val.key, req.Method, req.URL.RequestURI(), reqBody, fabCACompatibilityMode)
 }
 
 // RevokeSelf revokes this X509 credential

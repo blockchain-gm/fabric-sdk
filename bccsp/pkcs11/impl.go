@@ -14,10 +14,10 @@ import (
 
 	"fabric-sdk/bccsp"
 
-	// "fabric-sdk/flogging"
-	flogging "fabric-sdk/bccsp/sdkpatch/logbridge"
-
 	"fabric-sdk/bccsp/sw"
+
+	// "github.com/hyperledger/fabric/common/flogging"
+	flogging "fabric-sdk/bccsp/sdkpatch/logbridge"
 
 	"github.com/miekg/pkcs11"
 	"github.com/pkg/errors"

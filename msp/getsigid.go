@@ -29,8 +29,8 @@ type User struct {
 	privateKey            bccsp.Key
 }
 
-func newUser(userData *kv.UserData, cryptoSuite bccsp.BCCSP) (*User, error) {
-	pubKey, err := GetPublicKeyFromCert(userData.EnrollmentCertificate, cryptoSuite)
+func newUser(providerName string, userData *kv.UserData, cryptoSuite bccsp.BCCSP) (*User, error) {
+	pubKey, err := GetPublicKeyFromCert(providerName, userData.EnrollmentCertificate, cryptoSuite)
 	if err != nil {
 		return nil, errors.WithMessage(err, "fetching public key from cert failed")
 	}
@@ -49,7 +49,7 @@ func newUser(userData *kv.UserData, cryptoSuite bccsp.BCCSP) (*User, error) {
 
 // NewUser creates a User instance
 func (mgr *IdentityManager) NewUser(userData *kv.UserData) (*User, error) {
-	return newUser(userData, mgr.cryptoSuite)
+	return newUser(mgr.providerName, userData, mgr.cryptoSuite)
 }
 
 func (mgr *IdentityManager) loadUserFromStore(username string) (*User, error) {
@@ -91,7 +91,7 @@ func (mgr *IdentityManager) CreateSigningIdentity(opts ...SigningIdentityOption)
 	}
 	var privateKey bccsp.Key
 	if opt.PrivateKey == nil {
-		pubKey, err := GetPublicKeyFromCert(opt.Cert, mgr.cryptoSuite)
+		pubKey, err := GetPublicKeyFromCert(mgr.providerName, opt.Cert, mgr.cryptoSuite)
 		if err != nil {
 			return nil, errors.WithMessage(err, "fetching public key from cert failed")
 		}
@@ -262,7 +262,7 @@ func (mgr *IdentityManager) getPrivateKeyFromCert(username string, cert []byte) 
 	if cert == nil {
 		return nil, errors.New("cert is nil")
 	}
-	pubKey, err := GetPublicKeyFromCert(cert, mgr.cryptoSuite)
+	pubKey, err := GetPublicKeyFromCert(mgr.providerName, cert, mgr.cryptoSuite)
 	if err != nil {
 		return nil, errors.WithMessage(err, "fetching public key from cert failed")
 	}
@@ -304,7 +304,7 @@ func (mgr *IdentityManager) getPriKeyBytesFromCert(username string, cert []byte)
 	if cert == nil {
 		return nil, errors.New("cert is nil")
 	}
-	pubKey, err := GetPublicKeyFromCert(cert, mgr.cryptoSuite)
+	pubKey, err := GetPublicKeyFromCert(mgr.providerName, cert, mgr.cryptoSuite)
 	if err != nil {
 		return nil, errors.WithMessage(err, "fetching public key from cert failed")
 	}

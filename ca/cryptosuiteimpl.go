@@ -13,9 +13,8 @@ func GetSuiteByConfig(secType string) (bccsp.BCCSP, error) {
 		opts *bccspSw.SwOpts
 	)
 
-	if secType == "SW" {
-		opts = getOptsByConfig()
-	}
+	//select SW or GM
+	opts = getOptsByConfig(secType)
 
 	bccsp, err := getBCCSPFromOpts(secType, opts)
 	if err != nil {
@@ -39,14 +38,27 @@ func GetSuiteWithDefaultEphemeral(secType string) (bccsp.BCCSP, error) {
 }
 
 func getBCCSPFromOpts(secType string, config *bccspSw.SwOpts) (bccsp.BCCSP, error) {
-	f := &bccspSw.SWFactory{}
+	if secType == "SW" {
+		f := &bccspSw.SWFactory{}
+		conf := &bccspSw.FactoryOpts{
+			ProviderName: "SW",
+			// ProviderName: secType,
+			SwOpts: config,
+		}
 
-	conf := &bccspSw.FactoryOpts{
-		// ProviderName: "SW",
-		ProviderName: secType,
-		SwOpts:       config,
+		csp, err := f.Get(conf)
+		if err != nil {
+			return nil, errors.Wrapf(err, "Could not initialize BCCSP %s", f.Name())
+		}
+		return csp, nil
 	}
 
+	f := &bccspSw.GMFactory{}
+	conf := &bccspSw.FactoryOpts{
+		ProviderName: "GM",
+		// ProviderName: secType,
+		SwOpts: config,
+	}
 	csp, err := f.Get(conf)
 	if err != nil {
 		return nil, errors.Wrapf(err, "Could not initialize BCCSP %s", f.Name())
@@ -63,9 +75,22 @@ func GetSuite(securityLevel int, hashFamily string, keyStore bccsp.KeyStore) (bc
 }
 
 //GetOptsByConfig Returns Factory opts for given SDK config
-func getOptsByConfig() *bccspSw.SwOpts {
+func getOptsByConfig(secType string) *bccspSw.SwOpts {
+	if secType == "SW" {
+		opts := &bccspSw.SwOpts{
+			HashFamily: "SHA2",
+			SecLevel:   256,
+			FileKeystore: &bccspSw.FileKeystoreOpts{
+				KeyStorePath: "./keys/keystore",
+			},
+		}
+		// logger.Debug("Initialized SW cryptosuite")
+
+		return opts
+	}
+
 	opts := &bccspSw.SwOpts{
-		HashFamily: "SHA2",
+		HashFamily: "GMSM3",
 		SecLevel:   256,
 		FileKeystore: &bccspSw.FileKeystoreOpts{
 			KeyStorePath: "./keys/keystore",

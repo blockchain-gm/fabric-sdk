@@ -49,7 +49,7 @@ func NewCAClient(orgName string, mspID string, caName string, stateStorePath str
 		return nil, err
 	}
 
-	adapter, err := newFabricCAAdapter(caName, cryptoSuite, config)
+	adapter, err := newFabricCAAdapter(caName, cryptoSuite, caConfig.SecType, config)
 	if err != nil {
 		return nil, errors.Wrapf(err, "error initializing CA [%s]", caName)
 	}
@@ -66,7 +66,8 @@ func NewCAClient(orgName string, mspID string, caName string, stateStorePath str
 	}
 
 	// identityManager, err := msp.NewIdentityManager(orgName, mspID, nil, "keys", userStore, cryptoSuite, currentDir)
-	identityManager, err := msp.NewIdentityManager(orgName, mspID, nil, caConf.KeyStorePath, userStore, cryptoSuite, currentDir)
+	identityManager, err := msp.NewIdentityManager(orgName, mspID, nil,
+		caConf.KeyStorePath, userStore, cryptoSuite, caConfig.SecType, currentDir)
 	if err != nil {
 		return nil, fmt.Errorf("identity manager not found for organization '%s", orgName)
 	}

@@ -24,16 +24,25 @@ import (
 )
 
 // NewSigner is constructor for Signer
-func NewSigner(key bccsp.Key, cert []byte) (*Signer, error) {
+func NewSigner(providerName string, key bccsp.Key, cert []byte) (*Signer, error) {
 	s := &Signer{
 		key:       key,
 		certBytes: cert,
 	}
 	var err error
-	s.cert, err = util.GetX509CertificateFromPEM(s.certBytes)
-	if err != nil {
-		return nil, errors.WithMessage(err, "Failed to unmarshal X509 certificate bytes")
+
+	if providerName == "GM" {
+		s.cert, err = util.GetX509CertificateFromGMPEM(providerName, s.certBytes)
+		if err != nil {
+			return nil, errors.WithMessage(err, "Failed to unmarshal X509 certificate bytes")
+		}
+	} else {
+		s.cert, err = util.GetX509CertificateFromPEM(s.certBytes)
+		if err != nil {
+			return nil, errors.WithMessage(err, "Failed to unmarshal X509 certificate bytes")
+		}
 	}
+
 	s.name = util.GetEnrollmentIDFromX509Certificate(s.cert)
 	return s, nil
 }

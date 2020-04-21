@@ -24,21 +24,23 @@ import (
 
 // fabricCAAdapter translates between SDK lingo and native Fabric CA API
 type fabricCAAdapter struct {
-	config      *CAConfig
-	cryptoSuite bccsp.BCCSP
-	caClient    *calib.Client
+	config       *CAConfig
+	providerName string
+	cryptoSuite  bccsp.BCCSP
+	caClient     *calib.Client
 }
 
-func newFabricCAAdapter(caID string, cryptoSuite bccsp.BCCSP, config *CAConfig) (*fabricCAAdapter, error) {
-	caClient, err := createFabricCAClient(caID, cryptoSuite, config)
+func newFabricCAAdapter(caID string, cryptoSuite bccsp.BCCSP, providerName string, config *CAConfig) (*fabricCAAdapter, error) {
+	caClient, err := createFabricCAClient(caID, cryptoSuite, providerName, config)
 	if err != nil {
 		return nil, err
 	}
 
 	a := &fabricCAAdapter{
-		config:      config,
-		cryptoSuite: cryptoSuite,
-		caClient:    caClient,
+		config:       config,
+		providerName: providerName,
+		cryptoSuite:  cryptoSuite,
+		caClient:     caClient,
 	}
 	return a, nil
 }
@@ -544,7 +546,7 @@ func getAllAttributes(attrs []caapi.Attribute) []api.Attribute {
 func (c *fabricCAAdapter) newIdentity(key bccsp.Key, cert []byte) (*calib.Identity, error) {
 	x509Cred := x509.NewCredential(key, cert, c.caClient)
 
-	signer, err := x509.NewSigner(key, cert)
+	signer, err := x509.NewSigner(c.providerName, key, cert)
 	if err != nil {
 		return nil, err
 	}
@@ -578,7 +580,7 @@ func getIdentityResponses(ca string, responses []caapi.IdentityInfo) []*api.Iden
 	return ret
 }
 
-func createFabricCAClient(caID string, cryptoSuite bccsp.BCCSP, config *CAConfig) (*calib.Client, error) {
+func createFabricCAClient(caID string, cryptoSuite bccsp.BCCSP, bccspType string, config *CAConfig) (*calib.Client, error) {
 
 	// Create new Fabric-ca client without configs
 	c := &calib.Client{
@@ -620,6 +622,7 @@ func createFabricCAClient(caID string, cryptoSuite bccsp.BCCSP, config *CAConfig
 	c.Config.TLS.Enabled = IsTLSEnabled(config.URL)
 	c.Config.MSPDir = config.caKeyStorePath //config.CAKeyStorePath()
 
+	c.Config.BCCSPType = bccspType
 	//Factory opts
 	c.Config.CSP = cryptoSuite
 
