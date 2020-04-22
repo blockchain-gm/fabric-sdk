@@ -34,27 +34,30 @@ func main() {
 		fmt.Println(err.Error())
 		return
 	}
+	// return
 
 	signer, err := orgEnv.LoadCrypto("root", ca)
 	if err != nil {
-		fmt.Println(err.Error())
+		fmt.Println("LoadCrypto err", err.Error())
 		return
 	}
 	_ = signer
 
+	// return
 	proposal, txID, err := libfab.CreateProposal(
 		signer,
 		fabConfig.Channel,
-		"standard",
+		fabConfig.Chaincode,
 		"putstandard", "key", "value",
 	)
 	if err != nil {
-		fmt.Println(err.Error())
+		fmt.Println("CreateProposal err", err.Error())
 		return
 	}
 
 	fmt.Println("TxID:", txID)
 	// assember := &Assembler{Signer: crypto}
+	// return
 
 	signedProp, err := libfab.SignProposal(proposal, signer)
 	if err != nil {
@@ -71,8 +74,12 @@ func main() {
 	}
 
 	response, err := endorser.ProcessProposal(context.Background(), signedProp)
-	if err != nil || response.Response.Status < 200 || response.Response.Status >= 400 {
-		fmt.Printf("Err processing proposal: %v, status: %d\n", err, response.Response.Status)
+	if err != nil {
+		fmt.Printf("Err processing proposal: %v\n", err)
+		return
+	}
+	if response.Response.Status < 200 || response.Response.Status >= 400 {
+		fmt.Printf("Err processing proposal status: %d\n", response.Response.Status)
 		return
 	}
 

@@ -14,6 +14,7 @@ import (
 
 	"fabric-sdk/fabric-ca/lib/client/credential/x509"
 
+	"github.com/cloudflare/cfssl/csr"
 	"github.com/pkg/errors"
 
 	"encoding/json"
@@ -51,6 +52,15 @@ func (c *fabricCAAdapter) Enroll(request *api.EnrollmentRequest) ([]byte, error)
 	// logger.Debugf("Enrolling user [%s]", request.Name)
 
 	// TODO add attributes
+	//add new
+	var n csr.Name
+	// n.C = "US"
+	n.OU = "client"
+
+	csr := &api.CSRInfo{
+		Names: []csr.Name{n},
+	}
+
 	careq := &caapi.EnrollmentRequest{
 		CAName:  c.caClient.Config.CAName,
 		Name:    request.Name,
@@ -58,6 +68,7 @@ func (c *fabricCAAdapter) Enroll(request *api.EnrollmentRequest) ([]byte, error)
 		Profile: request.Profile,
 		Type:    request.Type,
 		Label:   request.Label,
+		CSR:     csr,
 	}
 
 	if len(request.AttrReqs) > 0 {

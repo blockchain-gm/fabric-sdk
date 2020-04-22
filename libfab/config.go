@@ -98,7 +98,7 @@ func (o *OrgEnvOption) LoadCrypto(uID string, caClient *libca.CaClient) (*Crypto
 	if err != nil {
 		return nil, err
 	}
-	priv, err := GetPrivateKey(privateKey)
+	priv, err := GetPrivateKey(caClient.ProviderName, privateKey)
 	if err != nil {
 		return nil, err
 	}
@@ -109,7 +109,7 @@ func (o *OrgEnvOption) LoadCrypto(uID string, caClient *libca.CaClient) (*Crypto
 	}
 	name, err := proto.Marshal(id)
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
 
 	return &Crypto{

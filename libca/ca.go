@@ -8,6 +8,7 @@ import (
 	"errors"
 	"fabric-sdk/ca"
 	"fabric-sdk/fabric-ca/api"
+	"fabric-sdk/fabric-ca/util"
 	"fmt"
 	"path"
 
@@ -108,16 +109,21 @@ func (ca *CaClient) GetUserKeys(id string) ([]byte, *x509.Certificate, []byte, e
 	}
 
 	if certBytes != nil {
-		decoded, _ := pem.Decode(certBytes)
-		if decoded == nil {
-			return nil, nil, nil, errors.New("Failed cert decoding")
-		}
+		// decoded, _ := pem.Decode(certBytes)
+		// if decoded == nil {
+		// 	return nil, nil, nil, errors.New("Failed cert decoding")
+		// }
 
-		cert, err := x509.ParseCertificate(decoded.Bytes)
+		// cert, err := x509.ParseCertificate(decoded.Bytes)
+		// if err != nil {
+		// 	return nil, nil, nil, fmt.Errorf("failed to parse certificate: %s", err)
+		// }
+		// return priKey, cert, certBytes, nil
+
+		cert, err := util.GetX509CertificateFromGMPEM(ca.ProviderName, certBytes)
 		if err != nil {
 			return nil, nil, nil, fmt.Errorf("failed to parse certificate: %s", err)
 		}
-
 		return priKey, cert, certBytes, nil
 	}
 
@@ -145,6 +151,10 @@ func (ca *CaClient) Register(request *api.RegistrationRequest) (string, error) {
 	var a []api.Attribute
 	for i := range request.Attributes {
 		a = append(a, api.Attribute{Name: request.Attributes[i].Name, Value: request.Attributes[i].Value, ECert: request.Attributes[i].ECert})
+	}
+
+	if request.Type == "" {
+		request.Type = "client"
 	}
 
 	r := api.RegistrationRequest{

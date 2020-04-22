@@ -8,13 +8,14 @@ import (
 	"encoding/asn1"
 	"encoding/base64"
 	"encoding/pem"
+	"fmt"
 	"io/ioutil"
 	"math/big"
 
 	"github.com/hyperledger/fabric/bccsp/utils"
 	"github.com/hyperledger/fabric/common/crypto"
 	"github.com/hyperledger/fabric/protos/common"
-	"github.com/pkg/errors"
+	"github.com/tjfoc/gmsm/sm2"
 )
 
 type CryptoConfig struct {
@@ -29,24 +30,38 @@ type ECDSASignature struct {
 }
 
 type Crypto struct {
-	Creator    []byte
-	PrivKey    *ecdsa.PrivateKey
+	Creator []byte
+	// PrivKey    *ecdsa.PrivateKey
+	PrivKey    interface{}
 	SignCert   *x509.Certificate
 	TLSCACerts [][]byte
 }
 
 func (s *Crypto) Sign(message []byte) ([]byte, error) {
-	ri, si, err := ecdsa.Sign(rand.Reader, s.PrivKey, digest(message))
-	if err != nil {
-		return nil, err
-	}
+	var (
+		ecdsaPriKey *ecdsa.PrivateKey
+		sm2PriKey   *sm2.PrivateKey
+	)
+	switch s.PrivKey.(type) {
+	case *ecdsa.PrivateKey:
+		ecdsaPriKey = s.PrivKey.(*ecdsa.PrivateKey)
+		ri, si, err := ecdsa.Sign(rand.Reader, ecdsaPriKey, digest(message))
+		if err != nil {
+			return nil, err
+		}
 
-	si, _, err = utils.ToLowS(&s.PrivKey.PublicKey, si)
-	if err != nil {
-		return nil, err
-	}
+		si, _, err = utils.ToLowS(&ecdsaPriKey.PublicKey, si)
+		if err != nil {
+			return nil, err
+		}
 
-	return asn1.Marshal(ECDSASignature{ri, si})
+		return asn1.Marshal(ECDSASignature{ri, si})
+	case *sm2.PrivateKey:
+		fmt.Println("sm2 PrivateKey sign")
+		sm2PriKey = s.PrivKey.(*sm2.PrivateKey)
+		return sm2PriKey.Sign(rand.Reader, digest(message), nil)
+	}
+	return nil, fmt.Errorf("%s", "unknow private key type.")
 }
 
 func (s *Crypto) Serialize() ([]byte, error) {
@@ -97,18 +112,20 @@ func toPEM(in []byte) ([]byte, error) {
 	return d[:n], nil
 }
 
-func GetPrivateKey(in []byte) (*ecdsa.PrivateKey, error) {
+// func GetPrivateKey(providerName string, in []byte) (*ecdsa.PrivateKey, error) {
+func GetPrivateKey(providerName string, in []byte) (interface{}, error) {
 	k, err := utils.PEMtoPrivateKey(in, []byte{})
 	if err != nil {
 		return nil, err
 	}
 
-	key, ok := k.(*ecdsa.PrivateKey)
-	if !ok {
-		return nil, errors.Errorf("expecting ecdsa key")
-	}
+	return k, nil
+	// key, ok := k.(*ecdsa.PrivateKey)
+	// if !ok {
+	// 	return nil, errors.Errorf("expecting ecdsa key")
+	// }
 
-	return key, nil
+	// return key, nil
 }
 
 func GetCertificate(f string) (*x509.Certificate, []byte, error) {

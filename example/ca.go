@@ -38,6 +38,8 @@ func main() {
 	}
 	ca.GetCAInfo()
 
+	// return
+
 	name := RandString(10)
 	pwd, err := ca.Register(&api.RegistrationRequest{Name: name})
 	if err != nil {
