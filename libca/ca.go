@@ -10,11 +10,14 @@ import (
 	"fabric-sdk/fabric-ca/api"
 	"fmt"
 	"path"
+
+	"github.com/tjfoc/gmsm/sm2"
 )
 
 type CaClient struct {
-	Cli      *ca.CAClientImpl
-	CaConfig *api.CaConfig
+	Cli          *ca.CAClientImpl
+	CaConfig     *api.CaConfig
+	ProviderName string
 }
 
 func NewCaClient(caname string, config *api.FabConfig) (*CaClient, error) {
@@ -33,7 +36,7 @@ func NewCaClient(caname string, config *api.FabConfig) (*CaClient, error) {
 		if err != nil {
 			return nil, err
 		}
-		return &CaClient{Cli: ca, CaConfig: &caConfig}, nil
+		return &CaClient{Cli: ca, CaConfig: &caConfig, ProviderName: config.SecType}, nil
 	}
 	return nil, errors.New("ca config not exist")
 }
@@ -51,16 +54,32 @@ func (ca *CaClient) GetPubKey(ID string) (string, []byte, error) {
 			return "", nil, errors.New("Failed cert decoding")
 		}
 
-		x509Cert, err := x509.ParseCertificate(decoded.Bytes)
-		if err != nil {
-			return "", nil, fmt.Errorf("failed to parse certificate: %s", err)
-		}
-		if x509Cert.PublicKeyAlgorithm == x509.ECDSA {
-			ecdsaPublicKey := x509Cert.PublicKey.(*ecdsa.PublicKey)
-			x509EncodedPub, _ := x509.MarshalPKIXPublicKey(ecdsaPublicKey)
-			pemEncodedPub := pem.EncodeToMemory(&pem.Block{Type: "PUBLIC KEY", Bytes: x509EncodedPub})
-			return x509Cert.PublicKeyAlgorithm.String(), pemEncodedPub, nil
+		if ca.ProviderName == "GM" {
+			sm2x509Cert, err := sm2.ParseCertificate(decoded.Bytes)
+			if err != nil {
+				return "", nil, fmt.Errorf("failed to parse certificate: %s", err)
+			}
+			// fmt.Println(" sm2x509Cert.PublicKeyAlgorithm:", sm2x509Cert.PublicKeyAlgorithm)
+			// fmt.Printf(" x509Cert.PublicKey %T\n", sm2x509Cert.PublicKey)
+			sm2PublicKey := sm2x509Cert.PublicKey.(*sm2.PublicKey)
+			sm2EncodedPub, err := sm2.MarshalSm2PublicKey(sm2PublicKey)
+			if err != nil {
+				return "", nil, fmt.Errorf("failed to MarshalSm2PublicKey: %s", err)
+			}
+
+			pemEncodedPub := pem.EncodeToMemory(&pem.Block{Type: "PUBLIC KEY", Bytes: sm2EncodedPub})
+			return sm2x509Cert.PublicKeyAlgorithm.String(), pemEncodedPub, nil
 		} else {
+			x509Cert, err := x509.ParseCertificate(decoded.Bytes)
+			if err != nil {
+				return "", nil, fmt.Errorf("failed to parse certificate: %s", err)
+			}
+			if x509Cert.PublicKeyAlgorithm == x509.ECDSA {
+				ecdsaPublicKey := x509Cert.PublicKey.(*ecdsa.PublicKey)
+				x509EncodedPub, _ := x509.MarshalPKIXPublicKey(ecdsaPublicKey)
+				pemEncodedPub := pem.EncodeToMemory(&pem.Block{Type: "PUBLIC KEY", Bytes: x509EncodedPub})
+				return x509Cert.PublicKeyAlgorithm.String(), pemEncodedPub, nil
+			}
 			return "", nil, fmt.Errorf("%s", "unknow algorithm parse error")
 		}
 	}

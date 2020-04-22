@@ -46,22 +46,25 @@ func main() {
 	}
 	fmt.Println(name, pwd)
 
+	// return
 	err = ca.Enroll(&api.EnrollmentRequest{Name: name, Secret: pwd})
 	if err != nil {
 		fmt.Println(err.Error())
 		return
 	}
 
+	// return
+
 	identInfo, err := ca.GetIdentity(name, "ca-org1")
 	if err != nil {
-		fmt.Println(err.Error())
+		fmt.Println("GetIdentity err", err.Error())
 		return
 	}
 	fmt.Printf("%+v\n", *identInfo)
 
 	alg, pubKey, err := ca.GetPubKey(name)
 	if err != nil {
-		fmt.Println(err.Error())
+		fmt.Println("GetPubKey err", err.Error())
 		return
 	}
 	fmt.Println("GetPubKey:", alg)

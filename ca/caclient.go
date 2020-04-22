@@ -2,9 +2,10 @@ package ca
 
 import (
 	"crypto/x509"
-	"encoding/pem"
 	"fabric-sdk/bccsp"
 	"fabric-sdk/fabric-ca/api"
+	"fabric-sdk/fabric-ca/util"
+
 	"fabric-sdk/kv"
 	"fabric-sdk/msp"
 	"fmt"
@@ -16,6 +17,7 @@ type CAClientImpl struct {
 	orgName         string
 	caName          string
 	orgMSPID        string
+	providerName    string
 	cryptoSuite     bccsp.BCCSP
 	identityManager *msp.IdentityManager
 	userStore       kv.UserStore
@@ -76,6 +78,7 @@ func NewCAClient(orgName string, mspID string, caName string, stateStorePath str
 		orgName:         orgName,
 		caName:          caName,
 		orgMSPID:        mspID,
+		providerName:    caConfig.SecType,
 		cryptoSuite:     cryptoSuite,
 		identityManager: identityManager,
 		userStore:       userStore,
@@ -110,12 +113,17 @@ func (c *CAClientImpl) GetUserCertificate(id string) (*x509.Certificate, []byte,
 
 	certBytes := registrar.EnrollmentCertificate()
 	if certBytes != nil {
-		decoded, _ := pem.Decode(certBytes)
-		if decoded == nil {
-			return nil, nil, errors.New("Failed cert decoding")
-		}
+		// decoded, _ := pem.Decode(certBytes)
+		// if decoded == nil {
+		// 	return nil, nil, errors.New("Failed cert decoding")
+		// }
 
-		cert, err := x509.ParseCertificate(decoded.Bytes)
+		// cert, err = x509.ParseCertificate(decoded.Bytes)
+		// if err != nil {
+		// 	return nil, nil, fmt.Errorf("failed to parse certificate: %s", err)
+		// }
+
+		cert, err := util.GetX509CertificateFromGMPEM(c.providerName, certBytes)
 		if err != nil {
 			return nil, nil, fmt.Errorf("failed to parse certificate: %s", err)
 		}

@@ -18,7 +18,8 @@ require (
 	github.com/pkg/errors v0.9.1
 	github.com/spf13/viper v1.6.3 // indirect
 	github.com/sykesm/zap-logfmt v0.0.3 // indirect
-	github.com/tjfoc/gmsm v1.3.0
+	// github.com/tjfoc/gmsm v1.3.0
+	github.com/tjfoc/gmsm v1.2.3
 	github.com/tjfoc/gmtls v1.2.1 // indirect
 	go.uber.org/zap v1.14.1
 	golang.org/x/crypto v0.0.0-20200414173820-0848c9571904

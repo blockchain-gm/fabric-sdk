@@ -43,6 +43,7 @@ import (
 	"github.com/cloudflare/cfssl/csr"
 	"github.com/cloudflare/cfssl/helpers"
 	"github.com/pkg/errors"
+	"github.com/tjfoc/gmsm/sm2"
 )
 
 // getBCCSPKeyOpts generates a key as specified in the request.
@@ -172,6 +173,13 @@ func ImportBCCSPKeyFromPEMBytes(keyBuff []byte, myCSP bccsp.BCCSP, temporary boo
 		return nil, errors.WithMessage(err, fmt.Sprintf("Failed parsing private key from %s", keyFile))
 	}
 	switch key.(type) {
+	case *sm2.PrivateKey: //add new
+		block, _ := pem.Decode(keyBuff)
+		priv, err := myCSP.KeyImport(block.Bytes, &bccsp.GMSM2PrivateKeyImportOpts{Temporary: true})
+		if err != nil {
+			return nil, fmt.Errorf("Failed to convert SM2 private key from %s: %s", keyFile, err.Error())
+		}
+		return priv, nil
 	case *ecdsa.PrivateKey:
 		priv, err := factory.PrivateKeyToDER(key.(*ecdsa.PrivateKey))
 		if err != nil {

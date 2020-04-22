@@ -25,16 +25,14 @@ import (
 	"crypto/rand"
 	"crypto/sha512"
 	"encoding/asn1"
+	"encoding/base64"
 	"encoding/binary"
 	"errors"
+	"fmt"
 	"io"
 	"math/big"
 
 	"github.com/tjfoc/gmsm/sm3"
-)
-
-var (
-	default_uid = []byte{0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37, 0x38, 0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37, 0x38}
 )
 
 const (
@@ -76,8 +74,7 @@ func SignDataToSignDigit(sign []byte) (*big.Int, *big.Int, error) {
 
 // sign format = 30 + len(z) + 02 + len(r) + r + 02 + len(s) + s, z being what follows its size, ie 02+len(r)+r+02+len(s)+s
 func (priv *PrivateKey) Sign(rand io.Reader, msg []byte, opts crypto.SignerOpts) ([]byte, error) {
-	// r, s, err := Sign(priv, msg)
-	r, s, err := Sm2Sign(priv, msg, nil)
+	r, s, err := Sign(priv, msg)
 	if err != nil {
 		return nil, err
 	}
@@ -93,10 +90,10 @@ func (pub *PublicKey) Verify(msg []byte, sign []byte) bool {
 
 	_, err := asn1.Unmarshal(sign, &sm2Sign)
 	if err != nil {
+		fmt.Println("Unmarshal>>>", err.Error)
 		return false
 	}
-	return Sm2Verify(pub, msg, nil, sm2Sign.R, sm2Sign.S)
-	// return Verify(pub, msg, sm2Sign.R, sm2Sign.S)
+	return Verify(pub, msg, sm2Sign.R, sm2Sign.S)
 }
 
 func (pub *PublicKey) Encrypt(data []byte) ([]byte, error) {
@@ -218,9 +215,10 @@ func Sign(priv *PrivateKey, hash []byte) (r, s *big.Int, err error) {
 			r.Add(r, e)
 			r.Mod(r, N)
 			if r.Sign() != 0 {
-				if t := new(big.Int).Add(r, k); t.Cmp(N) != 0 {
-					break
-				}
+				break
+			}
+			if t := new(big.Int).Add(r, k); t.Cmp(N) == 0 {
+				break
 			}
 		}
 		rD := new(big.Int).Mul(priv.D, r)
@@ -237,6 +235,8 @@ func Sign(priv *PrivateKey, hash []byte) (r, s *big.Int, err error) {
 }
 
 func Verify(pub *PublicKey, hash []byte, r, s *big.Int) bool {
+	fmt.Println("sm2 Verify in", base64.StdEncoding.EncodeToString(hash))
+
 	c := pub.Curve
 	N := c.Params().N
 
@@ -262,6 +262,8 @@ func Verify(pub *PublicKey, hash []byte, r, s *big.Int) bool {
 	e := new(big.Int).SetBytes(hash)
 	x.Add(x, e)
 	x.Mod(x, N)
+
+	fmt.Println("sm2 Verify out latest", x.Cmp(r))
 	return x.Cmp(r) == 0
 }
 
@@ -291,11 +293,11 @@ func Sm2Sign(priv *PrivateKey, msg, uid []byte) (r, s *big.Int, err error) {
 			r.Add(r, e)
 			r.Mod(r, N)
 			if r.Sign() != 0 {
-				if t := new(big.Int).Add(r, k); t.Cmp(N) != 0 {
-					break
-				}
+				break
 			}
-
+			if t := new(big.Int).Add(r, k); t.Cmp(N) == 0 {
+				break
+			}
 		}
 		rD := new(big.Int).Mul(priv.D, r)
 		s = new(big.Int).Sub(k, rD)
@@ -353,9 +355,6 @@ func msgHash(za, msg []byte) (*big.Int, error) {
 // ZA = H256(ENTLA || IDA || a || b || xG || yG || xA || yA)
 func ZA(pub *PublicKey, uid []byte) ([]byte, error) {
 	za := sm3.New()
-	if len(uid) <= 0 {
-		uid = default_uid
-	}
 	uidLen := len(uid)
 	if uidLen >= 8192 {
 		return []byte{}, errors.New("SM2: uid too large")
@@ -363,9 +362,7 @@ func ZA(pub *PublicKey, uid []byte) ([]byte, error) {
 	Entla := uint16(8 * uidLen)
 	za.Write([]byte{byte((Entla >> 8) & 0xFF)})
 	za.Write([]byte{byte(Entla & 0xFF)})
-	if uidLen > 0 {
-		za.Write(uid)
-	}
+	za.Write(uid)
 	za.Write(sm2P256ToBig(&sm2P256.a).Bytes())
 	za.Write(sm2P256.B.Bytes())
 	za.Write(sm2P256.Gx.Bytes())
