@@ -1,3 +1,17 @@
+# tjfoc
+```
+1 此库源仓库是如下仓库，但是因为在做国密时使用到的国密库
+https://github.com/tjfoc/gmsm
+https://github.com/tjfoc/gmtls
+
+2 为什么不用源仓库
+fabric fabric-ca目录使用的是原仓库的某一个版本，但是目前无法排查到，
+又在后来新开发fabric-sdk时，发现使用原仓库和fabirc-ca 中的tjfoc版本不一致，
+造成验证签名失败，所以目前考虑方便，临时先开一个新仓库，方便新开发的fabric-sdk
+使用，以免造成fabric-sdk使用的tjfoc原仓库，造成签名失败bug
+```
+
+
 # gmtls
 [![Build Status](https://www.travis-ci.org/tjfoc/gmtls.svg?branch=develop)](https://www.travis-ci.org/tjfoc/gmtls)
 GM TLS/SSL Based on Golang (基于国密算法的TLS/SSL代码库)

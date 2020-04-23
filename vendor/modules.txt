@@ -89,7 +89,7 @@ github.com/hashicorp/hcl/hcl/token
 github.com/hashicorp/hcl/json/parser
 github.com/hashicorp/hcl/json/scanner
 github.com/hashicorp/hcl/json/token
-# github.com/hyperledger/fabric v1.4.3 => code.uni-ledger.com/liuhangyu/fabric v0.0.0-20200320100527-a32145492d5c
+# github.com/hyperledger/fabric v1.4.3 => github.com/blockchain-gm/fabric v0.0.0-20200423071858-46723fbca0a9
 github.com/hyperledger/fabric/bccsp
 github.com/hyperledger/fabric/bccsp/factory
 github.com/hyperledger/fabric/bccsp/gm
@@ -166,11 +166,11 @@ github.com/spf13/viper
 github.com/subosito/gotenv
 # github.com/sykesm/zap-logfmt v0.0.3
 github.com/sykesm/zap-logfmt
-# github.com/tjfoc/gmsm v1.2.3
+# github.com/tjfoc/gmsm v1.2.3 => github.com/blockchain-gm/gmsm v0.0.0-20200423074409-6ddd939b0ea7
 github.com/tjfoc/gmsm/sm2
 github.com/tjfoc/gmsm/sm3
 github.com/tjfoc/gmsm/sm4
-# github.com/tjfoc/gmtls v1.2.1
+# github.com/tjfoc/gmtls v1.2.1 => github.com/blockchain-gm/gmtls v0.0.0-20200423074652-5e39cd9262b9
 github.com/tjfoc/gmtls
 github.com/tjfoc/gmtls/gmcredentials
 # github.com/weppos/publicsuffix-go v0.5.0

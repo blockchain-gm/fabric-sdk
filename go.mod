@@ -26,4 +26,8 @@ require (
 	google.golang.org/grpc v1.28.1 // indirect
 )
 
-replace github.com/hyperledger/fabric v1.4.3 => code.uni-ledger.com/liuhangyu/fabric v0.0.0-20200320100527-a32145492d5c
+replace github.com/hyperledger/fabric v1.4.3 => github.com/blockchain-gm/fabric v0.0.0-20200423071858-46723fbca0a9
+
+replace github.com/tjfoc/gmsm v1.2.3 => github.com/blockchain-gm/gmsm v0.0.0-20200423074409-6ddd939b0ea7
+
+replace github.com/tjfoc/gmtls v1.2.1 => github.com/blockchain-gm/gmtls v0.0.0-20200423074652-5e39cd9262b9
